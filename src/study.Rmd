@@ -1,0 +1,64 @@
+---
+title: "MusicFID"
+output: html_document
+date: "2026-10-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Dataset: <https://www.kaggle.com/datasets/catherinerasgaitis/mxmh-survey-results>
+
+Columnas disponibles:
+
+- **Timestamp**: Momento en el que el usuario respondió la encuesta.
+
+- **Age**: Edad del encuestado.
+
+- **Primary.streaming.service**: Principal servicio de streaming usado por el encuestado.
+
+- **Hours.per.day**: Horas del día dedicadas a escuchar música.
+
+- **While.working**: Representa si el encuestado escucha música mientras trabaja o no.
+
+- **Instrumentalist**: Representa si el encuentado toca un instrumento de forma habitual o no.
+
+- **Composer**: Representa si el encuestado compone música o no.
+
+- **Fav.genre**: Género favorito o principal del encuestado.
+
+- **Exploratory**: Representa si el encuestado explora activamente nuevos artistas o géneros.
+
+- **Foreign.languages**: Representa si el encuestado escucha habitualmente música con letras en un idioma que no domina.
+
+- **BPM**: Pulsaciones por minuto o tempo del género favorito del encuestado.
+
+- **Frequency..[Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock, Video game music]**: Frecuencia con la que el encuestado escucha cada uno de los géneros musicales listados (escala ordinal: Never, Rarely, Sometimes, Very frequently).
+
+- **Anxiety**: Nivel de ansiedad autoinformado por el encuestado (escala de 0 a 10).
+
+- **Depression**: Nivel de depresión autoinformado por el encuestado (escala de 0 a 10).
+
+- **Insomnia**: Nivel de insomnio autoinformado por el encuestado (escala de 0 a 10).
+
+- **OCD**: Nivel de TOC autoinformado por el encuestado (escala de 0 a 10).
+
+- **Music.effects**: Representa si la música mejora o empeora los problemas de salud mental del encuestado o si no tiene efecto.
+
+- **Permissions**: Permisos para publicar los datos.
+
+## Lectura
+
+Lectura inicial de los datos.
+
+```{r read}
+musicmh = read.csv("../inputs/mxmh_survey_results.csv")
+head(musicmh)
+```
+
+Resumen
+
+```{r pressure, echo=FALSE}
+summary(musicmh)
+```
