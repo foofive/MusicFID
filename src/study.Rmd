@@ -53,7 +53,7 @@ Columnas disponibles:
 Lectura inicial de los datos.
 
 ```{r read}
-musicmh = read.csv("../inputs/mxmh_survey_results.csv")
+musicmh = read.csv("../inputs/mxmh_survey_results.csv", na.strings = c(""))
 head(musicmh)
 ```
 
@@ -70,6 +70,6 @@ summary(musicmh)
 **Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
 
 ```{r}
-source("scripts/clean.R")
+source("scripts/preprocessing.R")
 musicmh = remove_noise_columns(musicmh)
 ```
