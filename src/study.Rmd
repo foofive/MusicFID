@@ -59,6 +59,17 @@ head(musicmh)
 
 Resumen
 
-```{r pressure, echo=FALSE}
+```{r summary, echo=FALSE}
 summary(musicmh)
+```
+
+## Preprocesamiento
+
+1\. Limpieza de columnas que solo aportan ruido, en concreto, Timestamp y Permissions. El día que se envió el formulario y si el encuestado da permiso no aportan información al estudio.
+
+**Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
+
+```{r}
+source("scripts/clean.R")
+musicmh = remove_noise_columns(musicmh)
 ```
