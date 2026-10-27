@@ -72,4 +72,7 @@ summary(musicmh)
 ```{r}
 source("scripts/preprocessing.R")
 musicmh = remove_noise_columns(musicmh)
+musicmh = convert_columns_to_factor(musicmh)
+
+summary(musicmh)
 ```
