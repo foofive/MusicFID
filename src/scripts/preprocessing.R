@@ -25,3 +25,18 @@ convert_columns_to_factor = function(data) {
   
   return(data)
 }
+
+
+ordinal_cols_encoder = function(data) {
+  freq_cols = c(grep("^Frequency", names(data), value = TRUE))
+  yn_cols = c("While.working", "Instrumentalist", "Composer",
+              "Exploratory", "Foreign.languages")
+  
+  cols = c(freq_cols, "Music.effects", yn_cols)
+  
+  for (col in cols) {
+    data[[col]] = as.integer(data[[col]])-1
+  }
+  
+  return(data)
+}

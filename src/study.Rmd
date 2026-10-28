@@ -53,7 +53,7 @@ Columnas disponibles:
 Lectura inicial de los datos.
 
 ```{r read}
-musicmh = read.csv("../inputs/mxmh_survey_results.csv", na.strings = c(""))
+raw_musicmh = read.csv("../inputs/mxmh_survey_results.csv", na.strings = c(""))
 head(musicmh)
 ```
 
@@ -71,8 +71,9 @@ summary(musicmh)
 
 ```{r}
 source("scripts/preprocessing.R")
-musicmh = remove_noise_columns(musicmh)
+musicmh = remove_noise_columns(raw_musicmh)
 musicmh = convert_columns_to_factor(musicmh)
+musicmh = ordinal_cols_encoder(musicmh)
 
 summary(musicmh)
 ```
