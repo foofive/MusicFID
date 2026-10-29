@@ -73,7 +73,29 @@ summary(musicmh)
 source("scripts/preprocessing.R")
 musicmh = remove_noise_columns(raw_musicmh)
 musicmh = convert_columns_to_factor(musicmh)
+
+summary(musicmh)
+
 musicmh = ordinal_cols_encoder(musicmh)
 
 summary(musicmh)
+```
+
+Las siguientes variables presenta valores ausentes que hay que tratar: Age(1), While.working(3), Instrumentalist(4), Composer(1), Foreign.languages(4), BPM(107), Music.effects(8).
+
+La variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
+
+## Visualización
+
+Outliers
+
+```{r}
+library(ggplot2)
+ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
+ggplot(data=musicmh,aes(x=1,y=Hours.per.day))+geom_boxplot()
+
+corrplot(cor(musicmh[, !names(musicmh) %in% c("Fav.genre", "Primary.streaming.service")], method = "pearson", use = "complete.obs"),
+         method = "color",
+         type = "upper",
+         tl.cex = 0.6)
 ```
