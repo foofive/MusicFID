@@ -27,6 +27,11 @@ convert_columns_to_factor = function(data) {
 }
 
 
+remove_na_target_rows_classification = function(data) {
+  data = data[!is.na(data$Music.effects),]
+  return(data)
+}
+
 ordinal_cols_encoder = function(data) {
   freq_cols = c(grep("^Frequency", names(data), value = TRUE))
   yn_cols = c("While.working", "Instrumentalist", "Composer",

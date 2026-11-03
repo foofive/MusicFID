@@ -54,7 +54,7 @@ Lectura inicial de los datos.
 
 ```{r read}
 raw_musicmh = read.csv("../inputs/mxmh_survey_results.csv", na.strings = c(""))
-head(musicmh)
+head(raw_musicmh)
 ```
 
 Resumen
@@ -64,6 +64,8 @@ summary(musicmh)
 ```
 
 ## Preprocesamiento
+
+### Limpieza
 
 1\. Limpieza de columnas que solo aportan ruido, en concreto, Timestamp y Permissions. El día que se envió el formulario y si el encuestado da permiso no aportan información al estudio.
 
@@ -91,6 +93,7 @@ Outliers
 
 ```{r}
 library(ggplot2)
+library(corrplot)
 ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
 ggplot(data=musicmh,aes(x=1,y=Hours.per.day))+geom_boxplot()
 
