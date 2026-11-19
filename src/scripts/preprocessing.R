@@ -1,6 +1,9 @@
+library(caret)
+
 remove_noise_columns = function(data) {
   data$Timestamp = NULL
   data$Permissions = NULL
+  data$Primary.streaming.service = NULL
   return(data)
 }
 
@@ -45,3 +48,13 @@ ordinal_cols_encoder = function(data) {
   
   return(data)
 }
+
+
+return_sorted_na_per_row_if_present = function (data){
+  na_counts = data %>%
+    mutate(na_count = rowSums(is.na(.))) %>%
+    filter(na_count > 0) %>%
+    arrange(desc(na_count))
+  return(na_counts)
+} 
+

@@ -67,18 +67,22 @@ summary(musicmh)
 
 ### Limpieza
 
+Importar las herramientas:
+
+```{r}
+source("scripts/preprocessing.R")
+```
+
 1\. Limpieza de columnas que solo aportan ruido, en concreto, Timestamp y Permissions. El día que se envió el formulario y si el encuestado da permiso no aportan información al estudio.
 
 **Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
 
+2\. Columnas que no son relevantes en el estudio, en concreto, Primary.streaming.service. La plataforma que utiliza para escuchar música no es relevante para el estudio, muchas de ellas vienen preinstaladas o no están disponibles en todos los dispositivos. **RETOCAR**
+
 ```{r}
-source("scripts/preprocessing.R")
+
 musicmh = remove_noise_columns(raw_musicmh)
 musicmh = convert_columns_to_factor(musicmh)
-
-summary(musicmh)
-
-musicmh = ordinal_cols_encoder(musicmh)
 
 summary(musicmh)
 ```
@@ -86,6 +90,22 @@ summary(musicmh)
 Las siguientes variables presenta valores ausentes que hay que tratar: Age(1), While.working(3), Instrumentalist(4), Composer(1), Foreign.languages(4), BPM(107), Music.effects(8).
 
 La variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
+
+3\. Eliminar muestras con muchos atributos NA.
+
+```{r}
+sorted_nas = return_sorted_na_per_row_if_present(musicmh)
+head(sorted_nas)
+```
+
+Por lo tanto, al tener la muestra con más NA presentes 6, hacer una imputación de tantos atributos sería generar una muestra muy artificial y es mejor eliminarla.
+
+```{r}
+musicmh = anti_join(musicmh, sorted_nas[1,])
+dim(musicmh)
+```
+
+--------------------
 
 ## Visualización
 
