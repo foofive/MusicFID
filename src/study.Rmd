@@ -1,7 +1,9 @@
 ---
 title: "MusicFID"
-output: html_document
-date: "2026-10-26"
+output:
+  html_document: default
+  pdf_document: default
+date: "2026-11-19"
 ---
 
 ```{r setup, include=FALSE}
@@ -130,9 +132,19 @@ dim(musicmh)
 
 Además, observamos en el summary que la variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
 
---------------------
+4\. Codificar variables nominales y ordinales
 
-## Visualización
+```{r}
+musicmh = ordinal_cols_encoder(musicmh)
+```
+
+### Tratamiento de valores ausentes y outliers
+
+La variable BPM presenta un centenar de valores ausentes, para completarlos, se hace uso de valores promedio de BPM proporcionados en la web [chosic](https://www.chosic.com/bpm-by-genre-list/?utm_source=chatgpt.com#classical) para los generos considerados en el dataset.
+
+Es posible que el no saber el género músical tenga relevancia en la salud mental de las personas, por lo que es interesante estudiar si es relevante que las personas conozcan el BPM de sus generos favoritos.
+
+## Exploración
 
 Outliers
 
@@ -147,4 +159,75 @@ corrplot(cor(musicmh[, !names(musicmh) %in% c("Fav.genre", "Primary.streaming.se
          method = "color",
          type = "upper",
          tl.cex = 0.6)
+```
+
+## Visualización - Pie Chart
+
+En este apartado hemos creado un pie chart para poder visualizar el número de personas que tiene cada género (ya que cada persona tiene un solo género favorito de música), para ello, hemos realizado un filtrado de los datos agrupando por género y contando el número de personas de cada uno, para después dibujarlo con plot_ly
+
+```{r}
+
+#
+library(plotly)
+library(gapminder)
+library(dplyr)
+df <- musicmh
+pie_data <- df %>%
+  filter(!is.na(Fav.genre)) %>%
+  group_by(Fav.genre) %>%
+  summarise(n_personas = n(), .groups = "drop")
+
+fig <- pie_data %>%
+  plot_ly(
+    labels = ~Fav.genre,
+    values = ~n_personas,
+    type = "pie",
+    textinfo = "label+percent",
+    hoverinfo = "label+value+percent"
+  ) %>%
+  layout(title = "Género favorito")
+
+fig
+
+```
+
+Puede verse que el género mayoritario es Rock (188 oyentes), seguido de Pop (114) y Metal (88), a su vez se puede ver que el género Latin y Gospel son los menos escuchados de forma bastante significativa (solo cuentan con 3 y 6 oyentes respectivamente).
+
+## Visualización - Dispersión por niveles de trastorno
+
+En este apartado hemos utilizado gráficos de dispersión para ver como se distribuyen los niveles percibidos de cada trastorno frente a las horas escuchadas de cada género, el tamaño de punto corresponde con el número de personas que escuchan un género un número determinado de horas y que han percibido un nivel determinado del trastorno. Al tener muchos géneros hemos decidido descartar todos aquellos que no superaran el 5% de representación total en número de personas, en este caso el corte queda en 37 personas.
+
+```{r warning=FALSE}
+
+num_people <- df %>%
+  filter(!is.na(Fav.genre)) %>%
+  group_by(Fav.genre) %>%
+  filter(n() >= 37) %>%
+  ungroup() %>%
+  group_by(Hours.per.day, Anxiety, Fav.genre) %>%
+  summarise(n_personas = n(), .groups = "drop")
+
+fig <- num_people %>%
+  plot_ly(
+    x = ~Hours.per.day,
+    y = ~Anxiety,
+    size = ~n_personas,
+    color = ~Fav.genre,
+    type = "scatter",
+    mode = "markers",
+    sizes = c(10, 60),
+    marker = list(opacity = 0.6, sizemode = "diameter"),
+    text = ~paste("Personas:", n_personas),
+    hoverinfo = "text+x+y"
+  )
+
+fig
+```
+
+En el caso de la ansiedad podemos ver que los oyentes de Rock cuentan con niveles de ansiedad superiores a 5 en su mayoría. Podemos ver una gran burbuja de personas que tienen un nivel 7 de ansiedad y que escuchan diariamente 2 horas de rock. A su vez podemos observar un outlier, ya que hay una persona que escucha al día 24 horas de Rock. Podemos también observar que las personas interesadas en la música clásica escuchan dichas canciones durante menos tiempo que el resto de géneros.
+
+Eliminación de filas con valor NA en la variable a predecir en clasificación.
+
+```{r}
+musicmh_class = remove_na_target_rows_classification(musicmh)
 ```

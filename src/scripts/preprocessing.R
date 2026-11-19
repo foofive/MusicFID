@@ -1,4 +1,5 @@
 library(caret)
+library(dplyr)
 
 remove_noise_columns = function(data) {
   data$Timestamp = NULL
@@ -49,6 +50,10 @@ ordinal_cols_encoder = function(data) {
   return(data)
 }
 
+nominal_cols_encoder = function (data) {
+  
+}
+
 
 return_sorted_na_per_row_if_present = function (data){
   na_counts = data %>%
@@ -57,4 +62,6 @@ return_sorted_na_per_row_if_present = function (data){
     arrange(desc(na_count))
   return(na_counts)
 } 
+
+#impute_all_na
 
