@@ -8,25 +8,32 @@ date: "2026-10-26"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Dataset: <https://www.kaggle.com/datasets/catherinerasgaitis/mxmh-survey-results>
+Trabajo realizado por el *Equipo 4*, compuesto por:
+- Emilio Manuel Vázquez Cruz 
+- María Quirós Quiroga 
+- Guillermo Rodríguez Narbona 
+- Esther Rocío Valladolid Ortiz 
+- Guillermo Ciria González
 
-Columnas disponibles:
+Realizaremos nuestro estudio sobre el dataset "Music & Mental Health Survey Results" de kaggle, disponible en el enlace: <https://www.kaggle.com/datasets/catherinerasgaitis/mxmh-survey-results>
+
+Esta dataset cuenta con las siguientes columnas:
 
 - **Timestamp**: Momento en el que el usuario respondió la encuesta.
 
 - **Age**: Edad del encuestado.
 
-- **Primary.streaming.service**: Principal servicio de streaming usado por el encuestado.
+- **Primary.streaming.service**: Servicio de streaming principal usado por el encuestado.
 
-- **Hours.per.day**: Horas del día dedicadas a escuchar música.
+- **Hours.per.day**: Horas por día dedicadas a escuchar música.
 
 - **While.working**: Representa si el encuestado escucha música mientras trabaja o no.
 
-- **Instrumentalist**: Representa si el encuentado toca un instrumento de forma habitual o no.
+- **Instrumentalist**: Representa si el encuestado toca un instrumento de forma habitual o no.
 
 - **Composer**: Representa si el encuestado compone música o no.
 
-- **Fav.genre**: Género favorito o principal del encuestado.
+- **Fav.genre**: Género musical favorito o principal del encuestado.
 
 - **Exploratory**: Representa si el encuestado explora activamente nuevos artistas o géneros.
 
@@ -44,40 +51,58 @@ Columnas disponibles:
 
 - **OCD**: Nivel de TOC autoinformado por el encuestado (escala de 0 a 10).
 
-- **Music.effects**: Representa si la música mejora o empeora los problemas de salud mental del encuestado o si no tiene efecto.
+- **Music.effects**: Representa si la música mejora, empeora o no tiene efecto sobre la salud mental del encuestado.
 
-- **Permissions**: Permisos para publicar los datos.
+- **Permissions**: Si el encuetado da permiso para publicar los datos.
 
 ## Lectura
 
-Lectura inicial de los datos.
+Primero realizaremos la lectura de los datos. 
 
 ```{r read}
 raw_musicmh = read.csv("../inputs/mxmh_survey_results.csv", na.strings = c(""))
+```
+
+Tras esto, visualizamos los primeros datos para hacernos a la idea del dataset:
+
+```{r}
 head(raw_musicmh)
 ```
+ Además observamos las dimensiones:
 
-Resumen
+```{r}
+dim(raw_musicmh)
+```
+Podemos observar que nuestro dataset cuenta con 33 columnas y 736 ejemplos distintos.
+
+Vemos un resumen de los datos con:
 
 ```{r summary, echo=FALSE}
-summary(musicmh)
+summary(raw_musicmh)
 ```
+Podemos observar que contamos con muchas variables categóricas como las frecuencias que están en formato "character". Además, las columnas correspondientes a los distintos problemas mentales son numéricas con valores de 0 a 10.
 
 ## Preprocesamiento
 
-### Limpieza
+Antes de realizar cualquier tarea sobre los datos, debemos preprocesarlos. Para el preprocesamiento hemos usado un scripr de R a parte donde se definen las funciones que usaremos. Este se encuentra en "scripts/preprocessing.R". Lo importamos:
 
-Importar las herramientas:
 
 ```{r}
 source("scripts/preprocessing.R")
 ```
 
-1\. Limpieza de columnas que solo aportan ruido, en concreto, Timestamp y Permissions. El día que se envió el formulario y si el encuestado da permiso no aportan información al estudio.
+
+### Limpieza
+
+El primer paso del preprocesado es limpiar el dataset, eliminando las variables que no son relevantes para el estudio y gestionando los NAs.
+
+Lo primero es limpiar las columnas que no contienen información sobre el tema de estudio, la música y la salud mental. Estas variables son:
+- Timestamp: El día y hora en el que se envió el formulario.
+- Permissions: Si el encuestado da permiso o no para usar sus datos en el estudio.
 
 **Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
 
-2\. Columnas que no son relevantes en el estudio, en concreto, Primary.streaming.service. La plataforma que utiliza para escuchar música no es relevante para el estudio, muchas de ellas vienen preinstaladas o no están disponibles en todos los dispositivos. **RETOCAR**
+Además, eliminamos las variables que no son relevantes para nuestras preguntas, en concreto, Primary.streaming.service, la plataforma que utiliza para escuchar música.
 
 ```{r}
 
@@ -87,29 +112,30 @@ musicmh = convert_columns_to_factor(musicmh)
 summary(musicmh)
 ```
 
-Las siguientes variables presenta valores ausentes que hay que tratar: Age(1), While.working(3), Instrumentalist(4), Composer(1), Foreign.languages(4), BPM(107), Music.effects(8).
+Además, en el summary podemos observar que las siguientes variables cuentan con NAs que tenemos que tratar: Age(1), While.working(3), Instrumentalist(4), Composer(1), Foreign.languages(4), BPM(107) y Music.effects(8).
 
-La variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
-
-3\. Eliminar muestras con muchos atributos NA.
+Además, podemos observar que hay algunos ejemplos que tienen muchos NAs. Calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
 
 ```{r}
 sorted_nas = return_sorted_na_per_row_if_present(musicmh)
 head(sorted_nas)
 ```
 
-Por lo tanto, al tener la muestra con más NA presentes 6, hacer una imputación de tantos atributos sería generar una muestra muy artificial y es mejor eliminarla.
+Podemos observar que el ejemplo con mayor número de NAs tiene 6, hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla.
 
 ```{r}
 musicmh = anti_join(musicmh, sorted_nas[1,])
 dim(musicmh)
 ```
 
+Además, observamos en el summary que la variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
+
 --------------------
 
 ## Visualización
 
 Outliers
+
 
 ```{r}
 library(ggplot2)
