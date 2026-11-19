@@ -1,7 +1,9 @@
 ---
 title: "MusicFID"
-output: html_document
-date: "2026-10-26"
+output:
+  html_document: default
+  pdf_document: default
+date: "2026-11-19"
 ---
 
 ```{r setup, include=FALSE}
@@ -105,7 +107,17 @@ musicmh = anti_join(musicmh, sorted_nas[1,])
 dim(musicmh)
 ```
 
---------------------
+4\. Codificar variables nominales y ordinales
+
+```{r}
+musicmh = ordinal_cols_encoder(musicmh)
+```
+
+### Tratamiento de valores ausentes y outliers
+
+La variable BPM presenta un centenar de valores ausentes, para completarlos, se hace uso de valores promedio de BPM proporcionados en la web [chosic](https://www.chosic.com/bpm-by-genre-list/?utm_source=chatgpt.com#classical) para los generos considerados en el dataset.
+
+Es posible que el no saber el género músical tenga relevancia en la salud mental de las personas, por lo que es interesante estudiar si es relevante que las personas conozcan el BPM de sus generos favoritos.
 
 ## Exploración
 
@@ -157,8 +169,7 @@ Puede verse que el género mayoritario es Rock (188 oyentes), seguido de Pop (11
 
 ## Visualización - Dispersión por niveles de trastorno
 
-En este apartado hemos utilizado gráficos de dispersión para ver como se distribuyen los niveles percibidos de cada trastorno frente a las horas escuchadas de cada género, el tamaño de punto corresponde con el número de personas que escuchan un género un número determinado de horas y que han percibido un nivel determinado del trastorno.
-Al tener muchos géneros hemos decidido descartar todos aquellos que no superaran el 5% de representación total en número de personas, en este caso el corte queda en 37 personas.
+En este apartado hemos utilizado gráficos de dispersión para ver como se distribuyen los niveles percibidos de cada trastorno frente a las horas escuchadas de cada género, el tamaño de punto corresponde con el número de personas que escuchan un género un número determinado de horas y que han percibido un nivel determinado del trastorno. Al tener muchos géneros hemos decidido descartar todos aquellos que no superaran el 5% de representación total en número de personas, en este caso el corte queda en 37 personas.
 
 ```{r warning=FALSE}
 
@@ -186,7 +197,11 @@ fig <- num_people %>%
 
 fig
 ```
-En el caso de la ansiedad podemos ver que los oyentes de Rock cuentan con niveles de ansiedad superiores a 5 en su mayoría.
-Podemos ver una gran burbuja de personas que tienen un nivel 7 de ansiedad y que escuchan diariamente 2 horas de rock.
-A su vez podemos observar un outlier, ya que hay una persona que escucha al día 24 horas de Rock.
-Podemos también observar que las personas interesadas en la música clásica escuchan dichas canciones durante menos tiempo que el resto de géneros.
+
+En el caso de la ansiedad podemos ver que los oyentes de Rock cuentan con niveles de ansiedad superiores a 5 en su mayoría. Podemos ver una gran burbuja de personas que tienen un nivel 7 de ansiedad y que escuchan diariamente 2 horas de rock. A su vez podemos observar un outlier, ya que hay una persona que escucha al día 24 horas de Rock. Podemos también observar que las personas interesadas en la música clásica escuchan dichas canciones durante menos tiempo que el resto de géneros.
+
+Eliminación de filas con valor NA en la variable a predecir en clasificación.
+
+```{r}
+musicmh_class = remove_na_target_rows_classification(musicmh)
+```
