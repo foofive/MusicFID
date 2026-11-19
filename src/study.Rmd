@@ -10,12 +10,25 @@ date: "2026-11-19"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Trabajo realizado por el *Equipo 4*, compuesto por:
-- Emilio Manuel Vázquez Cruz 
-- María Quirós Quiroga 
-- Guillermo Rodríguez Narbona 
-- Esther Rocío Valladolid Ortiz 
-- Guillermo Ciria González
+```{r}
+install.packages("tidyverse")
+install.packages("caret")
+install.packages("ggplot2")
+install.packages("corrplot")
+install.packages("dplyr")
+install.packages("gapminder")
+install.packages("plotly")
+
+library(tidyverse)
+library(caret)
+library(ggplot2)
+library(corrplot)
+library(dbplyr)
+library(gapminder)
+library(plotly)
+```
+
+Trabajo realizado por el *Equipo 4*, compuesto por: - Emilio Manuel Vázquez Cruz - María Quirós Quiroga - Guillermo Rodríguez Narbona - Esther Rocío Valladolid Ortiz - Guillermo Ciria González
 
 Realizaremos nuestro estudio sobre el dataset "Music & Mental Health Survey Results" de kaggle, disponible en el enlace: <https://www.kaggle.com/datasets/catherinerasgaitis/mxmh-survey-results>
 
@@ -59,7 +72,7 @@ Esta dataset cuenta con las siguientes columnas:
 
 ## Lectura
 
-Primero realizaremos la lectura de los datos. 
+Primero realizaremos la lectura de los datos.
 
 ```{r read}
 raw_musicmh = read.csv("../inputs/mxmh_survey_results.csv", na.strings = c(""))
@@ -70,11 +83,13 @@ Tras esto, visualizamos los primeros datos para hacernos a la idea del dataset:
 ```{r}
 head(raw_musicmh)
 ```
- Además observamos las dimensiones:
+
+Además observamos las dimensiones:
 
 ```{r}
 dim(raw_musicmh)
 ```
+
 Podemos observar que nuestro dataset cuenta con 33 columnas y 736 ejemplos distintos.
 
 Vemos un resumen de los datos con:
@@ -82,25 +97,22 @@ Vemos un resumen de los datos con:
 ```{r summary, echo=FALSE}
 summary(raw_musicmh)
 ```
+
 Podemos observar que contamos con muchas variables categóricas como las frecuencias que están en formato "character". Además, las columnas correspondientes a los distintos problemas mentales son numéricas con valores de 0 a 10.
 
 ## Preprocesamiento
 
 Antes de realizar cualquier tarea sobre los datos, debemos preprocesarlos. Para el preprocesamiento hemos usado un scripr de R a parte donde se definen las funciones que usaremos. Este se encuentra en "scripts/preprocessing.R". Lo importamos:
 
-
 ```{r}
 source("scripts/preprocessing.R")
 ```
-
 
 ### Limpieza
 
 El primer paso del preprocesado es limpiar el dataset, eliminando las variables que no son relevantes para el estudio y gestionando los NAs.
 
-Lo primero es limpiar las columnas que no contienen información sobre el tema de estudio, la música y la salud mental. Estas variables son:
-- Timestamp: El día y hora en el que se envió el formulario.
-- Permissions: Si el encuestado da permiso o no para usar sus datos en el estudio.
+Lo primero es limpiar las columnas que no contienen información sobre el tema de estudio, la música y la salud mental. Estas variables son: - Timestamp: El día y hora en el que se envió el formulario. - Permissions: Si el encuestado da permiso o no para usar sus datos en el estudio.
 
 **Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
 
@@ -147,7 +159,6 @@ Es posible que el no saber el género músical tenga relevancia en la salud ment
 ## Exploración
 
 Outliers
-
 
 ```{r}
 library(ggplot2)
@@ -231,3 +242,15 @@ Eliminación de filas con valor NA en la variable a predecir en clasificación.
 ```{r}
 musicmh_class = remove_na_target_rows_classification(musicmh)
 ```
+
+### Estudio de la proporción de valores del atributo Music.effects
+
+```{r}
+musicmh %>% remove_na_target_rows_classification() %>% mutate(Music.effects = Music.effects -1) %>% group_by(Music.effects) %>% count()
+```
+
+Al estar el dataset desbalanceado, aplicaremos las siguientes técnicas de preprocesamiento:
+
+- Uniremos en primer lugar las clases "Worsen" y "No effect" en una sola clase "Not improve" debido a que el número de datos de la clase "Worsen" no es significativo.
+
+- Realizaremos un UP-Sampling de los valores de la clase "Not improve" para equilibrar el número de muestras con la clase mayoritaria "Improve", que permanecerá igual.
