@@ -60,7 +60,7 @@ head(raw_musicmh)
 Resumen
 
 ```{r summary, echo=FALSE}
-summary(musicmh)
+summary(raw_musicmh)
 ```
 
 ## Preprocesamiento
@@ -87,7 +87,7 @@ Las siguientes variables presenta valores ausentes que hay que tratar: Age(1), W
 
 La variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
 
-## Visualización
+## Exploración
 
 Outliers
 
@@ -102,3 +102,71 @@ corrplot(cor(musicmh[, !names(musicmh) %in% c("Fav.genre", "Primary.streaming.se
          type = "upper",
          tl.cex = 0.6)
 ```
+
+## Visualización - Pie Chart
+
+En este apartado hemos creado un pie chart para poder visualizar el número de personas que tiene cada género (ya que cada persona tiene un solo género favorito de música), para ello, hemos realizado un filtrado de los datos agrupando por género y contando el número de personas de cada uno, para después dibujarlo con plot_ly
+
+```{r}
+
+#
+library(plotly)
+library(gapminder)
+library(dplyr)
+df <- musicmh
+pie_data <- df %>%
+  filter(!is.na(Fav.genre)) %>%
+  group_by(Fav.genre) %>%
+  summarise(n_personas = n(), .groups = "drop")
+
+fig <- pie_data %>%
+  plot_ly(
+    labels = ~Fav.genre,
+    values = ~n_personas,
+    type = "pie",
+    textinfo = "label+percent",
+    hoverinfo = "label+value+percent"
+  ) %>%
+  layout(title = "Género favorito")
+
+fig
+
+```
+
+Puede verse que el género mayoritario es Rock (188 oyentes), seguido de Pop (114) y Metal (88), a su vez se puede ver que el género Latin y Gospel son los menos escuchados de forma bastante significativa (solo cuentan con 3 y 6 oyentes respectivamente).
+
+## Visualización - Dispersión por niveles de trastorno
+
+En este apartado hemos utilizado gráficos de dispersión para ver como se distribuyen los niveles percibidos de cada trastorno frente a las horas escuchadas de cada género, el tamaño de punto corresponde con el número de personas que escuchan un género un número determinado de horas y que han percibido un nivel determinado del trastorno.
+Al tener muchos géneros hemos decidido descartar todos aquellos que no superaran el 5% de representación total en número de personas, en este caso el corte queda en 37 personas.
+
+```{r warning=FALSE}
+
+num_people <- df %>%
+  filter(!is.na(Fav.genre)) %>%
+  group_by(Fav.genre) %>%
+  filter(n() >= 37) %>%
+  ungroup() %>%
+  group_by(Hours.per.day, Anxiety, Fav.genre) %>%
+  summarise(n_personas = n(), .groups = "drop")
+
+fig <- num_people %>%
+  plot_ly(
+    x = ~Hours.per.day,
+    y = ~Anxiety,
+    size = ~n_personas,
+    color = ~Fav.genre,
+    type = "scatter",
+    mode = "markers",
+    sizes = c(10, 60),
+    marker = list(opacity = 0.6, sizemode = "diameter"),
+    text = ~paste("Personas:", n_personas),
+    hoverinfo = "text+x+y"
+  )
+
+fig
+```
+En el caso de la ansiedad podemos ver que los oyentes de Rock cuentan con niveles de ansiedad superiores a 5 en su mayoría.
+Podemos ver una gran burbuja de personas que tienen un nivel 7 de ansiedad y que escuchan diariamente 2 horas de rock.
+A su vez podemos observar un outlier, ya que hay una persona que escucha al día 24 horas de Rock.
+Podemos también observar que las personas interesadas en la música clásica escuchan dichas canciones durante menos tiempo que el resto de géneros.
