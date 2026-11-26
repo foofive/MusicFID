@@ -11,13 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("tidyverse")
-install.packages("caret")
-install.packages("ggplot2")
-install.packages("corrplot")
-install.packages("dplyr")
-install.packages("gapminder")
-install.packages("plotly")
+# install.packages("tidyverse")
+# install.packages("caret")
+# install.packages("ggplot2")
+# install.packages("corrplot")
+# install.packages("dplyr")
+# install.packages("gapminder")
+# install.packages("plotly")
 
 library(tidyverse)
 library(caret)
@@ -142,34 +142,51 @@ musicmh = anti_join(musicmh, sorted_nas[1,])
 dim(musicmh)
 ```
 
-Además, observamos en el summary que la variable BPM presenta valores claramente outliers, con valores desde 0 hasta 10^9^.
-
-4\. Codificar variables nominales y ordinales
+4\. Codificar variables ordinales y nominales (Fav.genre)
 
 ```{r}
 musicmh = ordinal_cols_encoder(musicmh)
+musicmh = nominal_cols_encoder(musicmh)
 ```
 
-### Tratamiento de valores ausentes y outliers
+#### Tratamiento de valores ausentes y outliers
 
-La variable BPM presenta un centenar de valores ausentes, para completarlos, se hace uso de valores promedio de BPM proporcionados en la web [chosic](https://www.chosic.com/bpm-by-genre-list/?utm_source=chatgpt.com#classical) para los generos considerados en el dataset.
+5\. Observando el summary y la gráfica vemos que la variable BPM presenta unos outliers claros que hay que tratar para, posteriormente poder imputar los datos faltantes. Desde valores de 0 (ausencia de ritmo) y extremadamente elevados (10^9^).
 
-Es posible que el no saber el género músical tenga relevancia en la salud mental de las personas, por lo que es interesante estudiar si es relevante que las personas conozcan el BPM de sus generos favoritos.
+```{r}
+
+summary(musicmh$BPM)
+p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
+
+subplot(p1)
+```
+
+Tras consultar los siguientes metronomos en línea y una web de BPM habitual por género musical, consideramos valores por debajo de 20 y superiores a 240 anómalos. Estos valores se eliminan y serán imputados.
+
+Webs consultadas:
+
+- <https://www.musicca.com/es/metronomo>
+
+- <https://www.imusic-school.com/es/herramientas/metronomo-en-linea/>
+
+- <https://es.wikipedia.org/wiki/Pulsaciones_por_minuto>
+
+Primero se eliminan los valores anómalos de BPM y luego se imputan todos los NA del dataset.
+
+```{r}
+musicmh = remove_outlier_bpm_values(musicmh)
+musicmh = impute_all_na(musicmh)
+```
 
 ## Exploración
 
-Outliers
-
 ```{r}
-library(ggplot2)
-library(corrplot)
-ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
 ggplot(data=musicmh,aes(x=1,y=Hours.per.day))+geom_boxplot()
 
 corrplot(cor(musicmh[, !names(musicmh) %in% c("Fav.genre", "Primary.streaming.service")], method = "pearson", use = "complete.obs"),
          method = "color",
          type = "upper",
-         tl.cex = 0.6)
+         tl.cex = 0.5)
 ```
 
 ## Visualización - Pie Chart
@@ -182,7 +199,7 @@ En este apartado hemos creado un pie chart para poder visualizar el número de p
 library(plotly)
 library(gapminder)
 library(dplyr)
-df <- musicmh
+df <- raw_musicmh
 pie_data <- df %>%
   filter(!is.na(Fav.genre)) %>%
   group_by(Fav.genre) %>%
