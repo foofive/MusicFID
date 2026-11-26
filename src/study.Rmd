@@ -254,6 +254,167 @@ fig
 
 En el caso de la ansiedad podemos ver que los oyentes de Rock cuentan con niveles de ansiedad superiores a 5 en su mayoría. Podemos ver una gran burbuja de personas que tienen un nivel 7 de ansiedad y que escuchan diariamente 2 horas de rock. A su vez podemos observar un outlier, ya que hay una persona que escucha al día 24 horas de Rock. Podemos también observar que las personas interesadas en la música clásica escuchan dichas canciones durante menos tiempo que el resto de géneros.
 
+Repetimos la misma gráfica con el resto de trastornos. Para no copiar el código tres veces, lo metemos en una función que recibe el nombre del trastorno:
+
+```{r warning=FALSE}
+dispersion_trastorno <- function(df, trastorno) {
+  df %>%
+    filter(!is.na(Fav.genre)) %>%
+    group_by(Fav.genre) %>%
+    filter(n() >= 37) %>%
+    ungroup() %>%
+    group_by(Hours.per.day, .data[[trastorno]], Fav.genre) %>%
+    summarise(n_personas = n(), .groups = "drop") %>%
+    plot_ly(
+      x = ~Hours.per.day,
+      y = as.formula(paste0("~", trastorno)),
+      size = ~n_personas,
+      color = ~Fav.genre,
+      type = "scatter",
+      mode = "markers",
+      sizes = c(10, 60),
+      marker = list(opacity = 0.6, sizemode = "diameter"),
+      text = ~paste("Personas:", n_personas),
+      hoverinfo = "text+x+y"
+    ) %>%
+    layout(title = paste("Horas al día vs", trastorno))
+}
+```
+
+### Depresión
+
+```{r warning=FALSE}
+dispersion_trastorno(df, "Depression")
+```
+
+La depresión está más repartida a lo largo de la escala que la ansiedad. Rock, EDM y Metal son los géneros con el nivel medio más alto (5,2, 5,2 y 5,1). Rock es además el que tiene más burbujas grandes en la zona alta, porque es también el género con más oyentes. Classical está algo por debajo de los demás (4,1).
+
+### Insomnio
+
+```{r warning=FALSE}
+dispersion_trastorno(df, "Insomnia")
+```
+
+El insomnio se concentra en valores bajos para casi todos los géneros, con muchas personas en los niveles 0–3. Metal es el género con el nivel medio más alto (4,6) y Pop el más bajo (3,4).
+
+### TOC
+
+```{r warning=FALSE}
+dispersion_trastorno(df, "OCD")
+```
+
+El TOC es el trastorno con los niveles más bajos: la mayoría de las burbujas están entre 0 y 3 para todos los géneros, y la media no pasa de 3 en ninguno. Por eso parece la variable menos útil para distinguir oyentes por su género favorito.
+
+En las cuatro gráficas, la cantidad de horas escuchadas al día no muestra una relación clara con el nivel del trastorno: las burbujas se reparten por toda la escala vertical, sean cuales sean las horas.
+
+## Visualización - Nivel medio de cada trastorno por género
+
+Para resumir las gráficas anteriores en una sola, calculamos el nivel medio de cada trastorno para los géneros con al menos 37 oyentes y lo mostramos como un mapa de calor:
+
+```{r}
+heat_data <- df %>%
+  filter(!is.na(Fav.genre)) %>%
+  group_by(Fav.genre) %>%
+  filter(n() >= 37) %>%
+  summarise(across(c(Anxiety, Depression, Insomnia, OCD), mean), .groups = "drop") %>%
+  pivot_longer(-Fav.genre, names_to = "Trastorno", values_to = "Media")
+
+ggplot(heat_data, aes(x = Trastorno, y = Fav.genre, fill = Media)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(Media, 1))) +
+  scale_fill_gradient(low = "#fff5eb", high = "#d94801") +
+  labs(x = NULL, y = "Género favorito", title = "Nivel medio de cada trastorno por género favorito")
+```
+
+La ansiedad es el trastorno con el nivel medio más alto en todos los géneros (entre 4,9 y 6,1), seguido de la depresión. El TOC es el más bajo. Classical tiene los valores más bajos en ansiedad y depresión, y Metal destaca en insomnio. En general las diferencias entre géneros son pequeñas, de alrededor de un punto.
+
+## Visualización - Frecuencia de escucha de cada género
+
+Las 16 columnas `Frequency..X.` indican con qué frecuencia escucha cada persona cada género. Las juntamos en un único gráfico de barras apiladas, ordenado por el porcentaje de personas que escuchan el género "Very frequently":
+
+```{r}
+freq_levels <- c("Never", "Rarely", "Sometimes", "Very frequently")
+
+freq_data <- df %>%
+  select(starts_with("Frequency")) %>%
+  pivot_longer(everything(), names_to = "Genero", values_to = "Frecuencia") %>%
+  filter(!is.na(Frecuencia)) %>%
+  mutate(Genero = gsub("Frequency\\.\\.|\\.$", "", Genero),
+         Genero = gsub("\\.", " ", Genero),
+         Genero = gsub("^R B$", "R&B", Genero),
+         Frecuencia = factor(Frecuencia, levels = freq_levels)) %>%
+  count(Genero, Frecuencia) %>%
+  group_by(Genero) %>%
+  mutate(Proporcion = n / sum(n)) %>%
+  ungroup()
+
+orden <- freq_data %>%
+  filter(Frecuencia == "Very frequently") %>%
+  arrange(Proporcion) %>%
+  pull(Genero)
+
+ggplot(freq_data, aes(x = factor(Genero, levels = orden), y = Proporcion, fill = Frecuencia)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(palette = "RdYlBu", direction = -1) +
+  labs(x = NULL, y = "Porcentaje de encuestados", fill = "Frecuencia",
+       title = "Frecuencia de escucha de cada género")
+```
+
+Rock y Pop son los géneros que escucha casi todo el mundo: solo el 12 % y el 8 % de los encuestados no los escucha nunca. En el otro extremo están Gospel (73 % "Never"), Latin (60 %) y K pop (57 %). Esto coincide con el pie chart del género favorito.
+
+## Visualización - Edad
+
+Vemos primero cómo se distribuye la edad de los encuestados:
+
+```{r warning=FALSE}
+ggplot(df, aes(x = Age)) +
+  geom_histogram(binwidth = 2, fill = "steelblue", color = "white") +
+  labs(x = "Edad", y = "Número de personas", title = "Distribución de la edad")
+```
+
+La muestra es muy joven: la mediana está en 21 años y la mitad de los encuestados tiene entre 18 y 28. Hay pocas personas mayores de 50, así que las conclusiones sobre ese grupo son menos fiables.
+
+Ahora agrupamos la edad en tramos y comparamos los niveles de cada trastorno:
+
+```{r}
+df %>%
+  filter(!is.na(Age)) %>%
+  mutate(Grupo.edad = cut(Age, breaks = c(0, 18, 25, 35, 50, Inf),
+                          labels = c("≤18", "19-25", "26-35", "36-50", ">50"))) %>%
+  pivot_longer(c(Anxiety, Depression, Insomnia, OCD),
+               names_to = "Trastorno", values_to = "Nivel") %>%
+  ggplot(aes(x = Grupo.edad, y = Nivel, fill = Grupo.edad)) +
+  geom_boxplot(show.legend = FALSE) +
+  facet_wrap(~Trastorno) +
+  labs(x = "Grupo de edad", y = "Nivel (0-10)", title = "Nivel de cada trastorno por grupo de edad")
+```
+
+Los niveles de ansiedad y depresión son parecidos hasta los 35 años y luego bajan claramente. En el grupo de más de 50 años la mediana de ansiedad es 3, frente a 6–7 en los grupos más jóvenes. El insomnio y el TOC cambian poco con la edad.
+
+<!--## Visualización - Correlación entre frecuencias de escucha y trastornos
+
+La matriz de correlación completa tiene demasiadas variables para leerla bien. Nos quedamos solo con lo que nos interesa: las 16 frecuencias de escucha frente a los 4 trastornos. Usamos Spearman porque las frecuencias son ordinales.
+
+```{r}
+freq_num <- df %>%
+  select(starts_with("Frequency")) %>%
+  mutate(across(everything(), ~ as.integer(factor(.x, levels = freq_levels)) - 1))
+colnames(freq_num) <- gsub("\\.", " ", gsub("Frequency\\.\\.|\\.$", "", colnames(freq_num)))
+colnames(freq_num) <- gsub("^R B$", "R&B", colnames(freq_num))
+
+cor_freq <- cor(freq_num, df[, c("Anxiety", "Depression", "Insomnia", "OCD")],
+                method = "spearman", use = "pairwise.complete.obs")
+
+corrplot(cor_freq, method = "color", addCoef.col = "black", number.cex = 0.7,
+         tl.col = "black", cl.pos = "n", is.corr = FALSE,
+         col = colorRampPalette(c("#2166ac", "white", "#b2182b"))(200),
+         col.lim = c(-0.2, 0.2))
+```
+
+#Todas las correlaciones son débiles (ninguna pasa de 0,2 en valor absoluto). Las más altas son la depresión con Metal (0,19), Rock (0,18) y Rap (0,14), y el insomnio con Metal (0,16). Escuchar con frecuencia un género concreto, por sí solo, explica muy poco del nivel de cada trastorno. Esto hay que tenerlo en cuenta para la regresión.-->
+
 Eliminación de filas con valor NA en la variable a predecir en clasificación.
 
 ```{r}
