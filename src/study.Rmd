@@ -13,13 +13,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("tidyverse")
-install.packages("caret")
-install.packages("ggplot2")
-install.packages("corrplot")
-install.packages("dplyr")
-install.packages("gapminder")
-install.packages("plotly")
+#install.packages("tidyverse")
+#install.packages("caret")
+#install.packages("ggplot2")
+#install.packages("corrplot")
+#install.packages("dplyr")
+#install.packages("gapminder")
+#install.packages("plotly")
 
 library(tidyverse)
 library(caret)
