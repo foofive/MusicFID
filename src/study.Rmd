@@ -522,15 +522,7 @@ A continuación, crearemos un modelo de regresión para cada métrica de salud m
 Como se explicó anteriormente, se entrenarán y evaluarán los modelos mediante el procedimiento K-Folds.
 
 ```{r}
-anxiety_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Anxiety)
-depression_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Depression)
-insomnia_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Insomnia)
-ocd_lm <- musicmh_regr |> regression_build_model(musicmh_regr$OCD)
-```
+k = 10
 
-```{r}
-anxiety_lm |> regression_eval_model(musicmh_regr$Anxiety)
-depression_lm |> regression_eval_model(musicmh_regr$Depression)
-insomnia_lm |> regression_eval_model(musicmh_regr$Insomnia)
-ocd_lm |> regression_eval_model(musicmh_regr$OCD)
+lms <- musicmh_regr |> regression_train_models(k)
 ```

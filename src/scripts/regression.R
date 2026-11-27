@@ -40,14 +40,17 @@ regression_standardize = function(data) {
   return (predict(standardized, data))
 }
 
-regression_build_model = function(data, target) {
-  return (
-    lm(target~., data)
+regression_train_models = function(data, k) {
+  train_control = trainControl(
+    method = "cv",
+    number = k
   )
-}
-
-regression_eval_model = function(model, target) {
-  predictions <- predict(model)
-  rmse <- sqrt((predictions - target) ** 2)
-  return (mean(rmse))
+  return (
+    list(
+      train(Anxiety~., data = data, method = "lm", trControl = train_control),
+      train(Depression~., data = data, method = "lm", trControl = train_control),
+      train(Insomnia~., data = data, method = "lm", trControl = train_control),
+      train(OCD~., data = data, method = "lm", trControl = train_control)
+    )
+  )
 }
