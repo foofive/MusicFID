@@ -40,6 +40,13 @@ regression_standardize = function(data) {
   return (predict(standardized, data))
 }
 
+regression_standardize_except = function(data, except) {
+  standardized = preProcess(data, method = c("center", "scale"))
+  out = (predict(standardized, data))
+  out[[except]] <- data[[except]]
+  return (out)
+}
+
 regression_train_models = function(data, k) {
   train_control = trainControl(
     method = "cv",
@@ -51,6 +58,21 @@ regression_train_models = function(data, k) {
       train(Depression~., data = data, method = "lm", trControl = train_control),
       train(Insomnia~., data = data, method = "lm", trControl = train_control),
       train(OCD~., data = data, method = "lm", trControl = train_control)
+    )
+  )
+}
+
+regression_train_knn = function(anxiety_data, depression_data, insomnia_data, ocd_data, k) {
+  train_control = trainControl(
+    method = "cv",
+    number = k
+  )
+  return (
+    list(
+      train(Anxiety~., data = anxiety_data, method = "lm"),
+      train(Depression~., data = depression_data, method = "lm"),
+      train(Insomnia~., data = insomnia_data, method = "lm"),
+      train(OCD~., data = ocd_data, method = "lm")
     )
   )
 }
