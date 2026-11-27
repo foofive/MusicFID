@@ -35,14 +35,22 @@ regression_get_cor = function(data, threshold = 0.25) {
   )
 }
 
-regression_build_model = function(data, target) {
-  return (
-    lm(target~., data)
-  )
+regression_standardize = function(data) {
+  standardized = preProcess(data, method = c("center", "scale"))
+  return (predict(standardized, data))
 }
 
-regression_eval_model = function(model, target) {
-  predictions <- predict(model)
-  rmse <- sqrt((predictions - target) ** 2)
-  return (mean(rmse))
+regression_train_models = function(data, k) {
+  train_control = trainControl(
+    method = "cv",
+    number = k
+  )
+  return (
+    list(
+      train(Anxiety~., data = data, method = "lm", trControl = train_control),
+      train(Depression~., data = data, method = "lm", trControl = train_control),
+      train(Insomnia~., data = data, method = "lm", trControl = train_control),
+      train(OCD~., data = data, method = "lm", trControl = train_control)
+    )
+  )
 }
