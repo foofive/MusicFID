@@ -6,6 +6,8 @@ output:
 date: "2026-11-19"
 ---
 
+# Music and Mental Health Survey Results. 
+## FID Project. 2026/2027
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -28,13 +30,21 @@ library(gapminder)
 library(plotly)
 ```
 
-Trabajo realizado por el *Equipo 4*, compuesto por: - Emilio Manuel Vázquez Cruz - María Quirós Quiroga - Guillermo Rodríguez Narbona - Esther Rocío Valladolid Ortiz - Guillermo Ciria González
+Trabajo realizado por el *Equipo 4*, compuesto por: 
+- Emilio Manuel Vázquez Cruz 
+- María Quirós Quiroga 
+- Guillermo Rodríguez Narbona 
+- Esther Rocío Valladolid Ortiz 
+- Guillermo Ciria González
 
 ## Objetivos del estudio
 
 Este trabajo analiza la relación entre los hábitos de escucha de música y la salud mental autoinformada a partir de la encuesta "Music & Mental Health Survey Results" de Kaggle.
 
-Abordamos dos problemas de aprendizaje supervisado: 1. **Efecto percibido de la música** (Music.effects). Clasificamos si la persona percibe que la música mejora su salud mental o no. Con las categorías: - Mejora: La música mejora la salud mental. - No mejora: La música empeora la salud mental o no tiene efecto sobre la misma.
+Abordamos dos problemas de aprendizaje supervisado: 
+1. **Efecto percibido de la música** (Music.effects). Clasificamos si la persona percibe que la música mejora su salud mental o no. Con las categorías: 
+    - Mejora: La música mejora la salud mental. 
+    - No mejora: La música empeora la salud mental o no tiene efecto sobre la misma.
 
 2.  **Niveles de los trastornos de salud mental** (Anxiety, Depression, Insomnia y OCD). Para cada trastorno estimamos su nivel en la escala del 0 al 10 con dos enfoques que comparamos:
     - **Clasificación**: cada valor entero de la escala es una clase, el modelo predice la clase.
@@ -555,13 +565,13 @@ k = 10
 lms <- musicmh_regr |> regression_train_models(k)
 ```
 
-## Aprendizaje supervisado: predicción de Music.effects
+### Aprendizaje supervisado: predicción de Music.effects
 
 ```{r}
 source("scripts/supervised_learning.R")
 ```
 
-### Agrupación de clases
+#### Agrupación de clases
 
 Partimos de `musicmh_class`, el dataset ya preprocesado e imputado y sin las filas con NA en la variable objetivo. Unimos las clases "Worsen" (0) y "No effect" (1) en una única clase "Not.improve" y mantenemos "Improve" (2).
 
@@ -572,7 +582,7 @@ table(musicmh_sup$Music.effects)
 
 Las variables Anxiety, Depression, Insomnia y OCD se mantienen como predictoras, ya que es razonable que el nivel de cada trastorno influya en el efecto que la persona percibe de la música.
 
-### Partición en entrenamiento y test
+#### Partición en entrenamiento y test
 
 Dividimos el dataset en un 80% para entrenamiento y un 20% para test. La partición es estratificada de modo que ambos conjuntos conservan la proporción original de clases. Fijamos una semilla para que el resultado sea reproducible.
 
@@ -585,7 +595,7 @@ prop.table(table(music_train$Music.effects))
 prop.table(table(music_test$Music.effects))
 ```
 
-### Up-sampling del conjunto de entrenamiento
+#### Up-sampling del conjunto de entrenamiento
 
 Para equilibrar las clases, replicamos aleatoriamente ejemplos de la clase minoritaria "Not.improve" hasta igualar el número de ejemplos de "Improve". El up-sampling se aplica sobre el conjunto de entrenamiento. El conjunto de test no se modifica, para que la evaluación refleje la distribución real de los datos y no incluya copias de ejemplos de entrenamiento.
 
@@ -599,7 +609,7 @@ table(music_test$Music.effects)
 
 Tras el up-sampling, el conjunto de entrenamiento queda balanceado, mientras que el de test mantiene el desbalanceo original.
 
-### Evaluación
+#### Evaluación
 
 Al estar las clases desbalanceadas, la accuracy no es una buena métrica, ya que un modelo que siempre prediga "Improve" ya acierta en torno al 75% de los casos. Por eso usamos como métrica principal la balanced accuracy, que calcula la media de la sensibilidad y la especificidad, y nos indica qué tan bien predice cada clase. También mostramos el Kappa, que mide el acuerdo entre las predicciones y los valores reales ajustado por el azar. Como método de validación usamos validación cruzada de 10 particiones repetida 3 veces sobre el conjunto de entrenamiento. Generamos las particiones una sola vez y se las pasamos a todos los modelos, para que todos se evalúen exactamente sobre los mismos datos y la comparación sea justa. El conjunto de test solo se usa al final, para la evaluación definitiva.
 
@@ -616,7 +626,7 @@ ctrl_up = music_effects_control(cv_index)
 ctrl_none = music_effects_control(cv_index, sampling = NULL)
 ```
 
-### ZeroR
+#### ZeroR
 
 ZeroR es el clasificador más sencillo posible ya que ignora todos los atributos y predice siempre la clase mayoritaria. Lo usamos como línea base: cualquier modelo útil tiene que superarlo. Lo entrenamos sin up-sampling, ya que con las clases equilibradas no existiría una clase mayoritaria y el modelo no tendría sentido.
 
@@ -627,7 +637,7 @@ model_zeror = train(x_train, y_train, method = "null",
 model_zeror$results
 ```
 
-### OneR
+#### OneR
 
 ```{r}
 set.seed(42)
@@ -646,7 +656,7 @@ head(model_oner$finalModel$errors, 10)
 
 La regla elegida usa `While.working`: si la persona escucha música mientras trabaja, predice "Improve" y, si no, "Not.improve". Los errores de los mejores atributos son muy parecidos, lo que indica que ningún atributo por separado discrimina bien entre las dos clases. Su balanced accuracy en validación cruzada apenas supera a la de ZeroR.
 
-### kNN
+#### kNN
 
 ```{r}
 set.seed(42)
@@ -658,7 +668,7 @@ model_knn$bestTune
 plot(model_knn)
 ```
 
-### Naive Bayes
+#### Naive Bayes
 
 ```{r}
 set.seed(42)
@@ -669,7 +679,7 @@ model_nb$results
 
 Naive Bayes tiene una sensibilidad muy alta pero una especificidad muy baja y clasifica casi todo como "Not.improve". Las hipótesis del modelo no se cumplen bien aquí: muchas variables son ordinales con pocos valores o binarias (no siguen una distribución normal) y las frecuencias de escucha de géneros parecidos están correlacionadas entre sí.
 
-### Árboles de decisión
+#### Árboles de decisión
 
 Entrenamos dos árboles con `rpart`, que cambian en el criterio usado para elegir cada división. En ambos casos ajustamos el parámetro de complejidad `cp`, que controla la poda.
 
@@ -704,9 +714,9 @@ Y la importancia de las variables según el árbol:
 plot(varImp(model_id3), top = 15)
 ```
 
-### Comparación de los modelos
+#### Comparación de los modelos
 
-#### Validación cruzada
+##### Validación cruzada
 
 ```{r}
 music_models = list(ZeroR = model_zeror, OneR = model_oner, kNN = model_knn,
@@ -720,7 +730,7 @@ summary(music_resamples, metric = c("BalancedAccuracy", "Kappa", "Sens", "Spec",
 bwplot(music_resamples, metric = c("BalancedAccuracy", "Kappa", "F1"))
 ```
 
-#### Conjunto de test
+##### Conjunto de test
 
 Por último, evaluamos cada modelo final sobre el conjunto de test, que no se ha usado en ningún momento del entrenamiento:
 
@@ -729,7 +739,7 @@ music_test_results = evaluate_on_test(music_models, x_test, y_test)
 music_test_results %>% arrange(desc(BalancedAccuracy))
 ```
 
-### Conclusiones
+#### Conclusiones
 
 Predecir si una persona percibe que la música mejora su salud mental a partir de sus hábitos de escucha y de sus niveles de trastorno resulta un problema difícil. Ninguno de los modelos consigue separar con claridad las dos clases. OneR apenas supera a ZeroR, lo que indica que ningún atributo por sí solo aporta información suficiente, y los modelos que combinan varios atributos solo consiguen una mejora moderada.
 
