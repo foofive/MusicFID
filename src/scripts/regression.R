@@ -35,6 +35,11 @@ regression_get_cor = function(data, threshold = 0.25) {
   )
 }
 
+regression_standardize = function(data) {
+  standardized = preProcess(data, method = c("center", "scale"))
+  return (predict(standardized, data))
+}
+
 regression_build_model = function(data, target) {
   return (
     lm(target~., data)
