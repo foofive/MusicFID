@@ -474,7 +474,11 @@ musicmh_regr <- musicmh |> remove_na_target_rows_classification()
 musicmh_regr |> regression_count_levels()
 ```
 
-Comprobamos que cada métrica presenta al menos un valor en un nivel fraccional:
+Como podemos observar, los distintos valores de cada métrica exhiben proporciones dispares. Además, dada la cantidad de posibles valores, la cantidad de muestras para cada uno de ellos es relativamente reducida.
+
+De esta manera, emplearemos K-Folds para el entrenamiento y evaluación de los distintos modelos, puesto que, pese a que el número de muestras de cada valor es suficiente para no requerir el uso de Leave-One-Out Cross-Validation (LOOCV), tampoco es lo suficientemente elevado para dividir el conjunto de datos entre entrenamiento y evaluación.
+
+También comprobamos que cada métrica presenta al menos un valor en un nivel fraccional:
 
 - **Ansiedad**: 1 registro en 7.5
 
@@ -514,6 +518,8 @@ musicmh_regr |> regression_standardize()
 #### Construcción y evaluación de modelos de regresión
 
 A continuación, crearemos un modelo de regresión para cada métrica de salud mental, empleando una regresión multivariable en la que todos los atributos del dataset (salvo aquellos designados como variables objetivo) se emplearán como variables predictoras.
+
+Como se explicó anteriormente, se entrenarán y evaluarán los modelos mediante el procedimiento K-Folds.
 
 ```{r}
 anxiety_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Anxiety)
