@@ -40,6 +40,13 @@ regression_standardize = function(data) {
   return (predict(standardized, data))
 }
 
+regression_standardize_except = function(data, except) {
+  standardized = preProcess(data, method = c("center", "scale"))
+  out = (predict(standardized, data))
+  out[[except]] <- data[[except]]
+  return (out)
+}
+
 regression_train_models = function(data, k) {
   train_control = trainControl(
     method = "cv",

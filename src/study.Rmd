@@ -507,22 +507,42 @@ musicmh_regr |> regression_get_cor(0.25)
 
 Como podemos observar, ningún atributo está especialmente correlacionado con las variables objetivo (solo un caso presenta un coeficiente de correlación superior al 50%), con lo que no descartaremos ningún atributo para la regresión.
 
-#### Estandarización de los atributos
+#### Eliminación de columna de género favorito
 
-Como último paso antes de realizar la regresión, estandarizaremos los atributos del dataset:
+Para preservar la independencia de las variables en la regresión, eliminamos una de las columnas correspondientes a los géneros favoritos (al haberse codificado como un one-hot, dichas variables no son independientes):
 
 ```{r}
-musicmh_regr |> regression_standardize()
+musicmh_regr <- musicmh_regr |> select(!matches("Fav_genreLatin"))
 ```
 
-#### Construcción y evaluación de modelos de regresión
+#### Estandarización de los atributos
+
+Como último paso antes de realizar la regresión, estandarizaremos los atributos del dataset (generamos adicionalmente varias versiones del dataset en la que se estandarizan todos los atributos salvo los empleados como variables objetivo de cara a la clasificación):
+
+```{r}
+musicmh_regr_anxiety <- musicmh_regr|> regression_standardize_except("Anxiety")
+musicmh_regr_depression <- musicmh_regr |> regression_standardize_except("Depression")
+musicmh_regr_insomnia <- musicmh_regr |> regression_standardize_except("Insomnia")
+musicmh_regr_ocd <- musicmh_regr |> regression_standardize_except("OCD")
+musicmh_regr <- musicmh_regr |> regression_standardize()
+```
+
+#### Construcción de modelos de regresión
 
 A continuación, crearemos un modelo de regresión para cada métrica de salud mental, empleando una regresión multivariable en la que todos los atributos del dataset (salvo aquellos designados como variables objetivo) se emplearán como variables predictoras.
 
-Como se explicó anteriormente, se entrenarán y evaluarán los modelos mediante el procedimiento K-Folds.
+Como se explicó anteriormente, se entrenarán los modelos mediante el procedimiento K-Folds.
 
 ```{r}
 k = 10
 
 lms <- musicmh_regr |> regression_train_models(k)
+```
+
+#### Construcción de modelos de clasificación (kNN)
+
+A continuación, realizaremos un proceso similar para crear un modelo de clasificación (empleando la técnica kNN) para cada métrica de salud mental. De nuevo, se empleará K-Folds para el entrenamiento.
+
+```{r}
+k = 10
 ```
