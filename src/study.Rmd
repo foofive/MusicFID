@@ -503,27 +503,51 @@ ocd_lm |> regression_eval_model(musicmh_regr$OCD)
 
 ### Aprendizaje no supervisado
 
+El aprendizaje no supervisado agrupa las observaciones según la similitud de sus características, sin utilizar la variable objetivo `Music.effects` para construir los grupos. Nuestra finalidad es comprobar si aparecen agrupaciones naturales asociadas, a priori, a la mejora o no mejora percibida de la salud mental.
+
+Para este estudio hemos utilizado el subconjunto limpio obtenido al eliminar las filas sin efecto musical conocido. Como la K-means calcula distancias, hemos estandarizado las variables numéricas y las variables categóricas o ordinales ya codificadas para que ninguna escala domine artificialmente la agrupación. Los outliers numéricos relevantes ya fueron tratados en el preprocesamiento.
+
 ```{r}
 musicmh_nosup = remove_na_target_rows_classification(musicmh)
 ```
 
-K-means
+#### K-Means
+
+K-Means es un algoritmo de aprendizaje no supervisado que fija un número `k` de centros y asigna cada observación al centro más cercano según una medida de distancia. Después recalcula iterativamente los centros hasta que las asignaciones convergen.
+
+Como entradas recibe el conjunto de datos, el número de clusters `k` y el criterio de convergencia. Hemos seleccionado `k = 2` para explorar dos grupos: mejora y no mejora percibida. Se han usado 20 inicializaciones distintas (`nstart = 20`) y se ha conservado la mejor solución, haciendo el resultado menos dependiente de la elección inicial de los centros.
 
 ```{r}
 
 kmusic = kmeans(musicmh_nosup, centers = 2, nstart=20)
 ```
 
-Clustering jerárquico
+Este análisis permite comparar los grupos obtenidos con la variable `Music.effects`, pero los clusters no reciben etiquetas semánticas automáticamente: una coincidencia o discrepancia debe interpretarse después de asignar cada grupo a las categorías observadas.
+
+#### Clustering jerárquico
+
+El clustering jerárquico construye una estructura de agrupación representada mediante un dendograma, en la que las observaciones más similares se unen antes que las más distintas. Utilizamos la distancia euclídea sobre los datos procesados y el método de enlace `ward.D2`, que tiende a formar grupos compactos minimizando la varianza interna.
+
+Como en K-Means, hemos cortado la jerarquía a dos grupos (`k = 2`) para compararla con las dos categorías definidas en el estudio: mejoría y no mejoría percibida. El dendograma permite examinar visualmente a qué altura se produjo la separación principal y si los grupos aparecen claramente diferenciados.
 
 ```{r}
 distances = dist(musicmh_nosup)
 hmusic = hclust(distances, method = "ward.D2") 
 hmusic_clust = cutree(hmusic,k=2)
-plot(hmusic)
+plot(hmusic,
+     main = "Dendograma del clustering jerárquico",
+     xlab = "Observaciones",
+     sub = "Distancia euclídea; método Ward.D2")
+rect.hclust(hmusic, k = 2, border = c("#5080F0", "#00954C"))
 ```
 
-#### Representación
+El corte a dos grupos es una decisión de nuestro análisis y no implica que existan necesariamente solo dos perfiles naturales en los datos. Por ello, comparamos también visualmente las asignaciones de ambos algoritmos.
+
+#### Representación con t-SNE
+
+El dataset procesado tiene 45 variables, por lo que resulta difícil representar directamente sus relaciones. Hemos aplicado t-SNE para transformar los datos a dos y tres dimensiones conservando principalmente las relaciones entre vecinos cercanos. Estas visualizaciones sirven para explorar la estructura local del conjunto y comparar los clusters, aunque las distancias globales y los ejes de t-SNE no tienen una interpretación directa.
+
+Se excluye `Music.effects` de la transformación porque se utiliza solo como referencia externa para interpretar los resultados; así, tanto K-Means como el clustering jerárquico siguen siendo no supervisados.
 
 ```{r}
 set.seed(34)
@@ -664,3 +688,92 @@ Ambos algoritmos enfrentados 2D
 ```{r}
 subplot(kmeans2d, jerarquico2d)
 ```
+
+Las gráficas permiten comprobar si ambos métodos forman regiones similares. Las etiquetas de color representan los clusters calculados, mientras que las variables externas se muestran únicamente para interpretar si los grupos se corresponden con la percepción del efecto musical.
+
+#### Redución de dimensionalidad mediante PCA
+
+Aplicamos el análisis de componentes principales para reducir el número de variables manteniendo aproximadamente entre el 80 % y el 85 % de la variabilidad original. PCA crea combinaciones lineales no correlacionadas de las variables originales y permite conservar la mayor parte de la información con menos componentes.
+
+En este caso, excluimos `Music.effects` de PCA y volvemos a incluirla solo al interpretar los grupos obtenidos. Antes de calcular los componentes, escalamos y centramos las variables predictoras para evitar que las diferencias de unidades influyan de forma desproporcionada.
+
+```{r}
+features_pca = select(musicmh_nosup, -"Music.effects")
+pre_pca = preProcess(features_pca, method = c("center", "scale"))
+features_scaled = predict(pre_pca, features_pca)
+
+pca_result = prcomp(features_scaled, center = FALSE, scale. = FALSE)
+pca_var = pca_result$sdev^2
+pca_cum_var = cumsum(pca_var) / sum(pca_var)
+num_pca = which(pca_cum_var >= 0.80)[1]
+
+pca_scores = pca_result$x[, 1:num_pca]
+pca_scores_df = as.data.frame(pca_scores)
+
+data.frame(
+  Componente = seq_along(pca_cum_var),
+  Varianza_acumulada = pca_cum_var
+) %>%
+  ggplot(aes(x = Componente, y = Varianza_acumulada)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0.80, linetype = "dashed") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Número de componentes", y = "Varianza acumulada",
+       title = "Varianza explicada por PCA")
+
+cat("Número de componentes para alcanzar al menos el 80%:", num_pca, "\n")
+cat("Varianza acumulada:", round(pca_cum_var[num_pca] * 100, 2), "%\n")
+```
+
+De este modo, reducimos la dimensionalidad conservando una proporción fija de la variabilidad. A continuación se repiten K-Means y el clustering jerárquico utilizando exclusivamente las componentes principales seleccionadas.
+
+##### K-Means tras PCA
+
+```{r}
+kmusic_pca = kmeans(pca_scores, centers = 2, nstart = 20)
+
+pca_tsne = Rtsne(pca_scores, dims = 2)
+
+pca_kmeans_df = data.frame(
+  X = pca_tsne$Y[, 1],
+  Y = pca_tsne$Y[, 2],
+  cluster = factor(kmusic_pca$cluster),
+  efecto = factor(musicmh_nosup$Music.effects)
+)
+
+ggplot(pca_kmeans_df, aes(x = X, y = Y, color = cluster)) +
+  geom_point(size = 1.5) +
+  scale_color_manual(values = colors) +
+  labs(title = "K-Means tras PCA representado con t-SNE",
+       x = "t-SNE Dimension 1", y = "t-SNE Dimension 2",
+       color = "Cluster") +
+  theme_minimal()
+```
+
+K-Means calcula ahora los centros y las distancias sobre las componentes principales en lugar de hacerlo sobre las 45 variables originales. Esta representación sirve para observar si la reducción preserva una estructura compatible con los grupos obtenidos.
+
+##### Clustering jerárquico tras PCA
+
+```{r}
+distances_pca = dist(pca_scores)
+hmusic_pca = hclust(distances_pca, method = "ward.D2")
+hmusic_pca_clust = cutree(hmusic_pca, k = 2)
+
+pca_hcl_df = data.frame(
+  X = pca_tsne$Y[, 1],
+  Y = pca_tsne$Y[, 2],
+  cluster = factor(hmusic_pca_clust),
+  efecto = factor(musicmh_nosup$Music.effects)
+)
+
+ggplot(pca_hcl_df, aes(x = X, y = Y, color = cluster)) +
+  geom_point(size = 1.5) +
+  scale_color_manual(values = colors) +
+  labs(title = "Clustering jerárquico tras PCA representado con t-SNE",
+       x = "t-SNE Dimension 1", y = "t-SNE Dimension 2",
+       color = "Cluster") +
+  theme_minimal()
+```
+
+La comparación de estos resultados con los obtenidos antes de PCA permite evaluar si la reducción de dimensionalidad simplifica los datos sin eliminar los patrones principales. Debemos interpretarla con cautela, ya que PCA conserva información global y t-SNE representa relaciones locales.
