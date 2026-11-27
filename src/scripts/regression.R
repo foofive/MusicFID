@@ -61,3 +61,18 @@ regression_train_models = function(data, k) {
     )
   )
 }
+
+regression_train_knn = function(anxiety_data, depression_data, insomnia_data, ocd_data, k) {
+  train_control = trainControl(
+    method = "cv",
+    number = k
+  )
+  return (
+    list(
+      train(Anxiety~., data = anxiety_data, method = "lm"),
+      train(Depression~., data = depression_data, method = "lm"),
+      train(Insomnia~., data = insomnia_data, method = "lm"),
+      train(OCD~., data = ocd_data, method = "lm")
+    )
+  )
+}

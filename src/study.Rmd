@@ -794,4 +794,12 @@ A continuación, realizaremos un proceso similar para crear un modelo de clasifi
 
 ```{r}
 k = 10
+
+knss <- regression_train_knn(
+  musicmh_regr_anxiety,
+  musicmh_regr_depression,
+  musicmh_regr_insomnia,
+  musicmh_regr_ocd,
+  k
+)
 ```
