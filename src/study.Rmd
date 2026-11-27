@@ -154,7 +154,7 @@ Por otro lado, podemos observar que la edad mediana es de 21 años, lo que confi
 
 ## Preprocesamiento
 
-Antes de realizar cualquier tarea sobre los datos, debemos preprocesarlos. Para el preprocesamiento hemos usado un scripr de R a parte donde se definen las funciones que usaremos. Este se encuentra en "scripts/preprocessing.R". Lo importamos:
+Antes de analizar nuestros datos, hay que preprocesarlos. Las funciones de preprocesado las hemos definido en un script aparte, que se encuentra en "scripts/preprocessing.R". Cargamos las funciones con:
 
 ```{r}
 source("scripts/preprocessing.R")
@@ -162,72 +162,154 @@ source("scripts/preprocessing.R")
 
 ### Limpieza
 
-El primer paso del preprocesado es limpiar el dataset, eliminando las variables que no son relevantes para el estudio y gestionando los NAs.
+Para limpiar el dataset, eliminamos las columnas que no son relevantes y no aportan información al estudio. Estas son:
+- Timestamp: registra la fecha y hora en la que se envió el formulario, no aporta información sobre música ni salud mental.
+- Permissions: todos los registros del dataset han dado permiso, por lo que tiene el mismo valor para todos y no aporta información.
+- Primary.streaming.service: no responde a ninguna de nuestras preguntas.
 
-Lo primero es limpiar las columnas que no contienen información sobre el tema de estudio, la música y la salud mental. Estas variables son: - Timestamp: El día y hora en el que se envió el formulario. - Permissions: Si el encuestado da permiso o no para usar sus datos en el estudio.
-
-**Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
-
-Además, eliminamos las variables que no son relevantes para nuestras preguntas, en concreto, Primary.streaming.service, la plataforma que utiliza para escuchar música.
+Usamos la función remove_noise_columns sobre nuestro dataset para eliminar estas columnas:
 
 ```{r}
-
 musicmh = remove_noise_columns(raw_musicmh)
-musicmh = convert_columns_to_factor(musicmh)
+```
 
+La segunda parte de la limpieza consiste en convertir las variables a los tipos adecuados.
+Las variables numéricas ya están correctamente tipadas, pero las variables de texto debemos convertirlas a factores.
+Las frecuencias de escucha de cada género y los efectos percibidos de la música los convertimos a factores ordenados, ya que tienen un orden implícito (de menor a mayor frecuencia o efecto). 
+Las demás variables de texto pueden tomar el valor Sí o No, las convertimos a factores sin orden.
+La única excepción es la variable Fav.genre, que convertiremos más adelante a variables dummy, ya que es una variable nominal con 16 valores posibles.
+
+```{r}
+musicmh = convert_columns_to_factor(musicmh)
+```
+
+Con la función summary(), comprobamos que las variables se han convertido correctamente a factores y que los valores de cada factor son los esperados:
+
+```{r}
 summary(musicmh)
 ```
 
-Además, en el summary podemos observar que las siguientes variables cuentan con NAs que tenemos que tratar: Age(1), While.working(3), Instrumentalist(4), Composer(1), Foreign.languages(4), BPM(107) y Music.effects(8).
+Ahora que las variables de texto son factores, podemos observar sus valores ausentes. Estos recuentos son previos a la eliminación de la fila con más NA, que se explica más adelante:
+- Age: 1 NA
+- While.working: 3 NAs
+- Instrumentalist: 4 NAs
+- Composer: 1 NA
+- Foreign.languages: 4 NAs
+- BPM: 107 NAs
+- Music.effects: 8 NAs
 
-Además, podemos observar que hay algunos ejemplos que tienen muchos NAs. Calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
+Trataremos estos valores en una sección posterior, ya que para poder imputarlos primero debemos tratar los outliers de la variable BPM.
+
+### Codificación de variables
+
+Las variables de tipo factor no se pueden usar directamente en muchos algoritmos de aprendizaje automático, por lo que las codificamos a variables numéricas. 
+
+Para codificar las variables ordinales usamos la función ordinal_cols_encoder, que asigna un número entero a cada nivel del factor manteniendo el orden de los niveles.
+Por ejemplo, para las variables de frecuencia de escucha, asignamos 0 a "Never", 1 a "Rarely", 2 a "Sometimes" y 3 a "Very frequently".
+Codificamos también las variables binarias Sí/No, asignando 0 a "No" y 1 a "Yes".
+Para `Music.effects` aplicamos el mismo criterio: 0 para "Worsen", 1 para "No effect" y 2 para "Improve".
+
+```{r}
+musicmh = ordinal_cols_encoder(musicmh)
+```
+
+Por otro lado, para codificar las variables nominales usamos la función nominal_cols_encoder.
+Esta función usa el método dummyVars() para crear una variable para cada nivel del factor, esto lo aplicamos sobre la única variable nominal que tenemos, Fav.genre que tiene 16 valores.
+El resultado es un dataset con 16 columnas nuevas, una por cada valor de Fav.genre, con valores 0 o 1 indicando si la persona tiene ese género favorito o no. La columna original Fav.genre se elimina.
+Como cada persona tiene un único género favorito, en cada fila solo una de las 16 columnas vale 1. Por eso las columnas no son independientes, algo que hay que tener en cuenta en la regresión.
+
+```{r}
+musicmh = nominal_cols_encoder(musicmh)
+```
+Podemos comprobar que la codificación se ha realizado correctamente con las siguientes líneas de código:
+
+```{r}
+ncol(musicmh)
+names(musicmh)
+```
+
+Observamos que ahora tenemos 45 columnas, las 30 que tenemos tras la limpieza y las 16 nuevas columnas que corresponden a cada valor de Fav.genre, menos la propia columna Fav.genre que se ha eliminado.
+
+### Tratamiento de outliers
+
+Como comentamos anteriormente, la variable BPM tiene valores atípicos que debemos tratar antes de imputar los valores ausentes.
+
+```{r}
+summary(musicmh$BPM)
+```
+
+Podemos observar que el valor mínimo es 0, lo cual es una ausencia total de ritmo, y el valor máximo es 1,00e+09, lo cual es un valor imposible para un tempo musical.
+Además, se observa que la media se ve distorsionada por estos valores extremos, ya que es de 1,59 · 10⁶. Por otro lado, la mediana es 120, lo cual es un valor normal conociendo el dominio.
+
+Para visualizar todo esto, creamos un boxplot de la variable BPM:
+
+```{r}
+p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
+
+subplot(p1)
+```
+
+Para considerar un valor como outlier nos vamos a basar en el dominio de la variable. Hemos consultado las siguientes webs de metrónomos en línea y una web del BPM habitual por género musical:
+
+- <https://www.musicca.com/es/metronomo>
+- <https://www.imusic-school.com/es/herramientas/metronomo-en-linea/>
+- <https://es.wikipedia.org/wiki/Pulsaciones_por_minuto>
+
+Tomamos 20 y 240 BPM como límites amplios que cubren los tempos habituales, y consideramos anómalos los valores por debajo de 20 o por encima de 240.
+Para eliminar estos valores, hemos creado la función remove_outlier_bpm_values.
+
+```{r}
+musicmh = remove_outlier_bpm_values(musicmh)
+```
+
+Realizamos otra visualización para comprobar que los outliers se han eliminado correctamente:
+```{r}
+p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
+
+subplot(p1)
+```
+
+Podemos ver que los valores más extremos se han eliminado correctamente, aunque aún hay algunos valores que se encuentran fuera de la caja pero siguen dentro del rango normal para el dominio.
+
+### Tratamiento de valores ausentes
+
+Como vimos, hay variables con valores ausentes que debemos tratar. 
+
+Lo primero que vamos a hacer para tratar estos valores es observar si hay ejemplos con un alto número de valores ausentes.
+Con la función return_sorted_na_per_row_if_present calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
 
 ```{r}
 sorted_nas = return_sorted_na_per_row_if_present(musicmh)
 head(sorted_nas)
 ```
 
-Podemos observar que el ejemplo con mayor número de NAs tiene 6, hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla.
+Podemos observar que el ejemplo con mayor número de NAs tiene 6. Esto corresponde a 6 de las 30 variables que quedan tras la limpieza (un 20 %). 
+Consideramos que hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla usando la función anti_join() de dplyr:
 
 ```{r}
 musicmh = anti_join(musicmh, sorted_nas[1,])
 dim(musicmh)
 ```
 
-4\. Codificar variables ordinales y nominales (Fav.genre)
+Ahora, debemos tratar los valores ausentes de las variables restantes. Para ello, hemos creado la función impute_all_na.
+
+La variable Music.effects tiene 8 valores ausentes, pero al tratarse de la variable a predecir en algunas de nuestras preguntas, hemos decidido no imputarla y eliminar los ejemplos con valores ausentes en esta variable cuando la usemos como variable a predecir.
+Imputarla supondría inventar la respuesta que queremos predecir, lo que sesgaría la clasificación; además, son muy pocos ejemplos (aproximadamente un 1 % de los ejemplos).
+
+La mayoría del resto de variables con NAs tienen muy pocos (entre 1 y 4). La excepción es la variable BPM, que tiene 107 valores ausentes. Esto es razonable ya que la descripción del dataset indica que era una pregunta opcional. 
+
+Para imputar hemos decidido usar bagImpute del paquete caret. Para cada variable con NAs, el método entrena un modelo de árboles agregados
+
+[TODO: queda por ver como imputar los NAs pq bagImpute hace que haya dependencia con las variables predictoras]
 
 ```{r}
-musicmh = ordinal_cols_encoder(musicmh)
-musicmh = nominal_cols_encoder(musicmh)
-```
-
-#### Tratamiento de valores ausentes y outliers
-
-5\. Observando el summary y la gráfica vemos que la variable BPM presenta unos outliers claros que hay que tratar para, posteriormente poder imputar los datos faltantes. Desde valores de 0 (ausencia de ritmo) y extremadamente elevados (10^9^).
-
-```{r}
-
-summary(musicmh$BPM)
-p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
-
-subplot(p1)
-```
-
-Tras consultar los siguientes metronomos en línea y una web de BPM habitual por género musical, consideramos valores por debajo de 20 y superiores a 240 anómalos. Estos valores se eliminan y serán imputados.
-
-Webs consultadas:
-
-- <https://www.musicca.com/es/metronomo>
-
-- <https://www.imusic-school.com/es/herramientas/metronomo-en-linea/>
-
-- <https://es.wikipedia.org/wiki/Pulsaciones_por_minuto>
-
-Primero se eliminan los valores anómalos de BPM y luego se imputan todos los NA del dataset.
-
-```{r}
-musicmh = remove_outlier_bpm_values(musicmh)
 musicmh = impute_all_na(musicmh)
+```
+
+Podemos comprobar que solo quedan los valores ausentes de la variable Music.effects, en el dataset con la siguiente línea de código:
+
+```{r}
+sum(is.na(musicmh))
 ```
 
 ## Exploración
