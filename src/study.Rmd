@@ -6,18 +6,22 @@ output:
 date: "2026-11-19"
 ---
 
+# Music and Mental Health Survey Results.
+
+## FID Project. 2026/2027
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-# install.packages("tidyverse")
-# install.packages("caret")
-# install.packages("ggplot2")
-# install.packages("corrplot")
-# install.packages("dplyr")
-# install.packages("gapminder")
-# install.packages("plotly")
+#install.packages("tidyverse")
+#install.packages("caret")
+#install.packages("ggplot2")
+#install.packages("corrplot")
+#install.packages("dplyr")
+#install.packages("gapminder")
+#install.packages("plotly")
 
 library(tidyverse)
 library(caret)
@@ -116,7 +120,7 @@ También nos confirma que para las variables de salud mental (Anxiety, Depressio
 
 ## Preprocesamiento
 
-Antes de realizar cualquier tarea sobre los datos, debemos preprocesarlos. Para el preprocesamiento hemos usado un scripr de R a parte donde se definen las funciones que usaremos. Este se encuentra en "scripts/preprocessing.R". Lo importamos:
+Antes de analizar nuestros datos, hay que preprocesarlos. Las funciones de preprocesado las hemos definido en un script aparte, que se encuentra en "scripts/preprocessing.R". Cargamos las funciones con:
 
 ```{r}
 source("scripts/preprocessing.R")
@@ -124,72 +128,131 @@ source("scripts/preprocessing.R")
 
 ### Limpieza
 
-El primer paso del preprocesado es limpiar el dataset, eliminando las variables que no son relevantes para el estudio y gestionando los NAs.
+Para limpiar el dataset, eliminamos las columnas que no son relevantes y no aportan información al estudio. Estas son: - Timestamp: registra la fecha y hora en la que se envió el formulario, no aporta información sobre música ni salud mental. - Permissions: todos los registros del dataset han dado permiso, por lo que tiene el mismo valor para todos y no aporta información. - Primary.streaming.service: no responde a ninguna de nuestras preguntas.
 
-Lo primero es limpiar las columnas que no contienen información sobre el tema de estudio, la música y la salud mental. Estas variables son: - Timestamp: El día y hora en el que se envió el formulario. - Permissions: Si el encuestado da permiso o no para usar sus datos en el estudio.
-
-**Nota**: Si el encuestado no da permiso para que se publiquen los datos entonces no se encuentra en le dataset, todos los que aparecen han consentido la publicación de sus resultados.
-
-Además, eliminamos las variables que no son relevantes para nuestras preguntas, en concreto, Primary.streaming.service, la plataforma que utiliza para escuchar música.
+Usamos la función remove_noise_columns sobre nuestro dataset para eliminar estas columnas:
 
 ```{r}
-
 musicmh = remove_noise_columns(raw_musicmh)
-musicmh = convert_columns_to_factor(musicmh)
+```
 
+La segunda parte de la limpieza consiste en convertir las variables a los tipos adecuados. Las variables numéricas ya están correctamente tipadas, pero las variables de texto debemos convertirlas a factores. Las frecuencias de escucha de cada género y los efectos percibidos de la música los convertimos a factores ordenados, ya que tienen un orden implícito (de menor a mayor frecuencia o efecto). Las demás variables de texto pueden tomar el valor Sí o No, las convertimos a factores sin orden. La única excepción es la variable Fav.genre, que convertiremos más adelante a variables dummy, ya que es una variable nominal con 16 valores posibles.
+
+```{r}
+musicmh = convert_columns_to_factor(musicmh)
+```
+
+Con la función summary(), comprobamos que las variables se han convertido correctamente a factores y que los valores de cada factor son los esperados:
+
+```{r}
 summary(musicmh)
 ```
 
-Además, en el summary podemos observar que las siguientes variables cuentan con NAs que tenemos que tratar: Age(1), While.working(3), Instrumentalist(4), Composer(1), Foreign.languages(4), BPM(107) y Music.effects(8).
+Ahora que las variables de texto son factores, podemos observar sus valores ausentes. Estos recuentos son previos a la eliminación de la fila con más NA, que se explica más adelante: - Age: 1 NA - While.working: 3 NAs - Instrumentalist: 4 NAs - Composer: 1 NA - Foreign.languages: 4 NAs - BPM: 107 NAs - Music.effects: 8 NAs
 
-Además, podemos observar que hay algunos ejemplos que tienen muchos NAs. Calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
+Trataremos estos valores en una sección posterior, ya que para poder imputarlos primero debemos tratar los outliers de la variable BPM.
+
+### Codificación de variables
+
+Las variables de tipo factor no se pueden usar directamente en muchos algoritmos de aprendizaje automático, por lo que las codificamos a variables numéricas.
+
+Para codificar las variables ordinales usamos la función ordinal_cols_encoder, que asigna un número entero a cada nivel del factor manteniendo el orden de los niveles. Por ejemplo, para las variables de frecuencia de escucha, asignamos 0 a "Never", 1 a "Rarely", 2 a "Sometimes" y 3 a "Very frequently". Codificamos también las variables binarias Sí/No, asignando 0 a "No" y 1 a "Yes". Para `Music.effects` aplicamos el mismo criterio: 0 para "Worsen", 1 para "No effect" y 2 para "Improve".
+
+```{r}
+musicmh = ordinal_cols_encoder(musicmh)
+```
+
+Por otro lado, para codificar las variables nominales usamos la función nominal_cols_encoder. Esta función usa el método dummyVars() para crear una variable para cada nivel del factor, esto lo aplicamos sobre la única variable nominal que tenemos, Fav.genre que tiene 16 valores. El resultado es un dataset con 16 columnas nuevas, una por cada valor de Fav.genre, con valores 0 o 1 indicando si la persona tiene ese género favorito o no. La columna original Fav.genre se elimina. Como cada persona tiene un único género favorito, en cada fila solo una de las 16 columnas vale 1. Por eso las columnas no son independientes, algo que hay que tener en cuenta en la regresión.
+
+```{r}
+musicmh = nominal_cols_encoder(musicmh)
+```
+
+Podemos comprobar que la codificación se ha realizado correctamente con las siguientes líneas de código:
+
+```{r}
+ncol(musicmh)
+names(musicmh)
+```
+
+Observamos que ahora tenemos 45 columnas, las 30 que tenemos tras la limpieza y las 16 nuevas columnas que corresponden a cada valor de Fav.genre, menos la propia columna Fav.genre que se ha eliminado.
+
+### Tratamiento de outliers
+
+Como comentamos anteriormente, la variable BPM tiene valores atípicos que debemos tratar antes de imputar los valores ausentes.
+
+```{r}
+summary(musicmh$BPM)
+```
+
+Podemos observar que el valor mínimo es 0, lo cual es una ausencia total de ritmo, y el valor máximo es 1,00e+09, lo cual es un valor imposible para un tempo musical. Además, se observa que la media se ve distorsionada por estos valores extremos, ya que es de 1,59 · 10⁶. Por otro lado, la mediana es 120, lo cual es un valor normal conociendo el dominio.
+
+Para visualizar todo esto, creamos un boxplot de la variable BPM:
+
+```{r}
+p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
+
+subplot(p1)
+```
+
+Para considerar un valor como outlier nos vamos a basar en el dominio de la variable. Hemos consultado las siguientes webs de metrónomos en línea y una web del BPM habitual por género musical:
+
+- <https://www.musicca.com/es/metronomo>
+- <https://www.imusic-school.com/es/herramientas/metronomo-en-linea/>
+- <https://es.wikipedia.org/wiki/Pulsaciones_por_minuto>
+
+Tomamos 20 y 240 BPM como límites amplios que cubren los tempos habituales, y consideramos anómalos los valores por debajo de 20 o por encima de 240. Para eliminar estos valores, hemos creado la función remove_outlier_bpm_values.
+
+```{r}
+musicmh = remove_outlier_bpm_values(musicmh)
+```
+
+Realizamos otra visualización para comprobar que los outliers se han eliminado correctamente:
+
+```{r}
+p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
+
+subplot(p1)
+```
+
+Podemos ver que los valores más extremos se han eliminado correctamente, aunque aún hay algunos valores que se encuentran fuera de la caja pero siguen dentro del rango normal para el dominio.
+
+### Tratamiento de valores ausentes
+
+Como vimos, hay variables con valores ausentes que debemos tratar.
+
+Lo primero que vamos a hacer para tratar estos valores es observar si hay ejemplos con un alto número de valores ausentes. Con la función return_sorted_na_per_row_if_present calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
 
 ```{r}
 sorted_nas = return_sorted_na_per_row_if_present(musicmh)
 head(sorted_nas)
 ```
 
-Podemos observar que el ejemplo con mayor número de NAs tiene 6, hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla.
+Podemos observar que el ejemplo con mayor número de NAs tiene 6. Esto corresponde a 6 de las 30 variables que quedan tras la limpieza (un 20 %). Consideramos que hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla usando la función anti_join() de dplyr:
 
 ```{r}
 musicmh = anti_join(musicmh, sorted_nas[1,])
 dim(musicmh)
 ```
 
-4\. Codificar variables ordinales y nominales (Fav.genre)
+Ahora, debemos tratar los valores ausentes de las variables restantes. Para ello, hemos creado la función impute_all_na.
+
+La variable Music.effects tiene 8 valores ausentes, pero al tratarse de la variable a predecir en algunas de nuestras preguntas, hemos decidido no imputarla y eliminar los ejemplos con valores ausentes en esta variable cuando la usemos como variable a predecir. Imputarla supondría inventar la respuesta que queremos predecir, lo que sesgaría la clasificación; además, son muy pocos ejemplos (aproximadamente un 1 % de los ejemplos).
+
+La mayoría del resto de variables con NAs tienen muy pocos (entre 1 y 4). La excepción es la variable BPM, que tiene 107 valores ausentes. Esto es razonable ya que la descripción del dataset indica que era una pregunta opcional.
+
+Para imputar hemos decidido usar bagImpute del paquete caret. Para cada variable con NAs, el método entrena un modelo de árboles agregados
+
+[TODO: queda por ver como imputar los NAs pq bagImpute hace que haya dependencia con las variables predictoras]
 
 ```{r}
-musicmh = ordinal_cols_encoder(musicmh)
-musicmh = nominal_cols_encoder(musicmh)
-```
-
-#### Tratamiento de valores ausentes y outliers
-
-5\. Observando el summary y la gráfica vemos que la variable BPM presenta unos outliers claros que hay que tratar para, posteriormente poder imputar los datos faltantes. Desde valores de 0 (ausencia de ritmo) y extremadamente elevados (10^9^).
-
-```{r}
-
-summary(musicmh$BPM)
-p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
-
-subplot(p1)
-```
-
-Tras consultar los siguientes metronomos en línea y una web de BPM habitual por género musical, consideramos valores por debajo de 20 y superiores a 240 anómalos. Estos valores se eliminan y serán imputados.
-
-Webs consultadas:
-
-- <https://www.musicca.com/es/metronomo>
-
-- <https://www.imusic-school.com/es/herramientas/metronomo-en-linea/>
-
-- <https://es.wikipedia.org/wiki/Pulsaciones_por_minuto>
-
-Primero se eliminan los valores anómalos de BPM y luego se imputan todos los NA del dataset.
-
-```{r}
-musicmh = remove_outlier_bpm_values(musicmh)
 musicmh = impute_all_na(musicmh)
+```
+
+Podemos comprobar que solo quedan los valores ausentes de la variable Music.effects, en el dataset con la siguiente línea de código:
+
+```{r}
+sum(is.na(musicmh))
 ```
 
 ## Exploración
@@ -442,7 +505,7 @@ musicmh_class = remove_na_target_rows_classification(musicmh)
 ### Estudio de la proporción de valores del atributo Music.effects
 
 ```{r}
-musicmh %>% remove_na_target_rows_classification() %>% mutate(Music.effects = Music.effects -1) %>% group_by(Music.effects) %>% count()
+musicmh %>% remove_na_target_rows_classification() %>% mutate(Music.effects = Music.effects) %>% group_by(Music.effects) %>% count()
 ```
 
 Al estar el dataset desbalanceado, aplicaremos las siguientes técnicas de preprocesamiento:
@@ -450,6 +513,192 @@ Al estar el dataset desbalanceado, aplicaremos las siguientes técnicas de prepr
 - Uniremos en primer lugar las clases "Worsen" y "No effect" en una sola clase "Not improve" debido a que el número de datos de la clase "Worsen" no es significativo.
 
 - Realizaremos un UP-Sampling de los valores de la clase "Not improve" para equilibrar el número de muestras con la clase mayoritaria "Improve", que permanecerá igual.
+
+```{r}
+source("scripts/supervised_learning.R")
+```
+
+#### Agrupación de clases
+
+Partimos de `musicmh_class`, el dataset ya preprocesado e imputado y sin las filas con NA en la variable objetivo. Unimos las clases "Worsen" (0) y "No effect" (1) en una única clase "Not.improve" y mantenemos "Improve" (2).
+
+```{r}
+musicmh_sup = binarize_music_effects(musicmh_class)
+table(musicmh_sup$Music.effects)
+```
+
+Las variables Anxiety, Depression, Insomnia y OCD se mantienen como predictoras, ya que es razonable que el nivel de cada trastorno influya en el efecto que la persona percibe de la música.
+
+#### Partición en entrenamiento y test
+
+Dividimos el dataset en un 80% para entrenamiento y un 20% para test. La partición es estratificada de modo que ambos conjuntos conservan la proporción original de clases. Fijamos una semilla para que el resultado sea reproducible.
+
+```{r}
+music_split = split_train_test(musicmh_sup)
+music_train = music_split$train
+music_test = music_split$test
+
+prop.table(table(music_train$Music.effects))
+prop.table(table(music_test$Music.effects))
+```
+
+#### Up-sampling del conjunto de entrenamiento
+
+Para equilibrar las clases, replicamos aleatoriamente ejemplos de la clase minoritaria "Not.improve" hasta igualar el número de ejemplos de "Improve". El up-sampling se aplica sobre el conjunto de entrenamiento. El conjunto de test no se modifica, para que la evaluación refleje la distribución real de los datos y no incluya copias de ejemplos de entrenamiento.
+
+```{r}
+music_train_up = upsample_train(music_train)
+
+table(music_train$Music.effects)
+table(music_train_up$Music.effects)
+table(music_test$Music.effects)
+```
+
+Tras el up-sampling, el conjunto de entrenamiento queda balanceado, mientras que el de test mantiene el desbalanceo original.
+
+#### Evaluación
+
+Al estar las clases desbalanceadas, la accuracy no es una buena métrica, ya que un modelo que siempre prediga "Improve" ya acierta en torno al 75% de los casos. Por eso usamos como métrica principal la balanced accuracy, que calcula la media de la sensibilidad y la especificidad, y nos indica qué tan bien predice cada clase. También mostramos el Kappa, que mide el acuerdo entre las predicciones y los valores reales ajustado por el azar. Como método de validación usamos validación cruzada de 10 particiones repetida 3 veces sobre el conjunto de entrenamiento. Generamos las particiones una sola vez y se las pasamos a todos los modelos, para que todos se evalúen exactamente sobre los mismos datos y la comparación sea justa. El conjunto de test solo se usa al final, para la evaluación definitiva.
+
+```{r}
+x_train = music_train[, setdiff(names(music_train), "Music.effects")]
+y_train = music_train$Music.effects
+x_test = music_test[, names(x_train)]
+y_test = music_test$Music.effects
+
+set.seed(42)
+cv_index = createMultiFolds(y_train, k = 10, times = 3)
+
+ctrl_up = music_effects_control(cv_index)
+ctrl_none = music_effects_control(cv_index, sampling = NULL)
+```
+
+#### ZeroR
+
+ZeroR es el clasificador más sencillo posible ya que ignora todos los atributos y predice siempre la clase mayoritaria. Lo usamos como línea base: cualquier modelo útil tiene que superarlo. Lo entrenamos sin up-sampling, ya que con las clases equilibradas no existiría una clase mayoritaria y el modelo no tendría sentido.
+
+```{r}
+set.seed(42)
+model_zeror = train(x_train, y_train, method = "null",
+                    trControl = ctrl_none, metric = "BalancedAccuracy")
+model_zeror$results
+```
+
+#### OneR
+
+```{r}
+set.seed(42)
+model_oner = train(x_train, y_train, method = oner_model,
+                   trControl = ctrl_up, metric = "BalancedAccuracy")
+model_oner$results
+```
+
+Atributo elegido por el modelo final, regla generada y tasa de error en entrenamiento de los mejores atributos:
+
+```{r}
+model_oner$finalModel$col
+model_oner$finalModel$pred
+head(model_oner$finalModel$errors, 10)
+```
+
+La regla elegida usa `While.working`: si la persona escucha música mientras trabaja, predice "Improve" y, si no, "Not.improve". Los errores de los mejores atributos son muy parecidos, lo que indica que ningún atributo por separado discrimina bien entre las dos clases. Su balanced accuracy en validación cruzada apenas supera a la de ZeroR.
+
+#### kNN
+
+```{r}
+set.seed(42)
+model_knn = train(x_train, y_train, method = "knn",
+                  preProcess = c("zv", "center", "scale"),
+                  tuneGrid = data.frame(k = seq(1, 51, 2)),
+                  trControl = ctrl_up, metric = "BalancedAccuracy")
+model_knn$bestTune
+plot(model_knn)
+```
+
+#### Naive Bayes
+
+```{r}
+set.seed(42)
+model_nb = train(x_train, y_train, method = nb_model,
+                 trControl = ctrl_up, metric = "BalancedAccuracy")
+model_nb$results
+```
+
+Naive Bayes tiene una sensibilidad muy alta pero una especificidad muy baja y clasifica casi todo como "Not.improve". Las hipótesis del modelo no se cumplen bien aquí: muchas variables son ordinales con pocos valores o binarias (no siguen una distribución normal) y las frecuencias de escucha de géneros parecidos están correlacionadas entre sí.
+
+#### Árboles de decisión
+
+Entrenamos dos árboles con `rpart`, que cambian en el criterio usado para elegir cada división. En ambos casos ajustamos el parámetro de complejidad `cp`, que controla la poda.
+
+```{r}
+cp_grid = data.frame(cp = c(0, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.075, 0.1))
+
+set.seed(42)
+model_cart = train(x_train, y_train, method = "rpart",
+                   tuneGrid = cp_grid,
+                   trControl = ctrl_up, metric = "BalancedAccuracy")
+
+set.seed(42)
+model_id3 = train(x_train, y_train, method = "rpart",
+                  parms = list(split = "information"),
+                  tuneGrid = cp_grid,
+                  trControl = ctrl_up, metric = "BalancedAccuracy")
+
+model_cart$bestTune
+model_id3$bestTune
+```
+
+Representamos el árbol obtenido con el criterio de entropía:
+
+```{r}
+rpart.plot::rpart.plot(model_id3$finalModel, type = 2, extra = 104,
+                       box.palette = "BuOr", tweak = 1.1)
+```
+
+Y la importancia de las variables según el árbol:
+
+```{r}
+plot(varImp(model_id3), top = 15)
+```
+
+#### Comparación de los modelos
+
+##### Validación cruzada
+
+```{r}
+music_models = list(ZeroR = model_zeror, OneR = model_oner, kNN = model_knn,
+                    NaiveBayes = model_nb, CART = model_cart, ID3 = model_id3)
+
+music_resamples = resamples(music_models)
+summary(music_resamples, metric = c("BalancedAccuracy", "Kappa", "Sens", "Spec", "F1"))
+```
+
+```{r}
+bwplot(music_resamples, metric = c("BalancedAccuracy", "Kappa", "F1"))
+```
+
+##### Conjunto de test
+
+Por último, evaluamos cada modelo final sobre el conjunto de test, que no se ha usado en ningún momento del entrenamiento:
+
+```{r}
+music_test_results = evaluate_on_test(music_models, x_test, y_test)
+music_test_results %>% arrange(desc(BalancedAccuracy))
+```
+
+#### Conclusiones
+
+Predecir si una persona percibe que la música mejora su salud mental a partir de sus hábitos de escucha y de sus niveles de trastorno resulta un problema difícil. Ninguno de los modelos consigue separar con claridad las dos clases. OneR apenas supera a ZeroR, lo que indica que ningún atributo por sí solo aporta información suficiente, y los modelos que combinan varios atributos solo consiguen una mejora moderada.
+
+ZeroR, al predecir siempre "Improve", obtiene una balanced accuracy de 0,5 y un Kappa de 0, y nos sirve como referencia. Esto confirma que la accuracy por sí sola sería engañosa: este modelo acierta en torno al 75% de los casos sin haber aprendido nada.
+
+Naive Bayes es el modelo que peor se adapta a los datos, porque sus hipótesis (independencia entre atributos y distribución normal de las variables numéricas) no se cumplen. Las frecuencias de escucha de géneros parecidos están relacionadas entre sí y muchas variables son ordinales o binarias.
+
+Hay que tener en cuenta que el conjunto de test es pequeño (alrededor de 145 ejemplos, de los cuales solo unos 37 son de la clase "Not.improve"). Por eso, unos pocos aciertos o fallos en esa clase cambian bastante las métricas, y las diferencias pequeñas entre modelos en test no deben tomarse como concluyentes.
+
+El up-sampling del conjunto de entrenamiento obliga a los modelos a prestar atención a la clase minoritaria. Sin él, la mayoría tendería a predecir siempre "Improve", como hace ZeroR.
+
+Por último, estos resultados están condicionados por las limitaciones de los datos que comentamos al principio. La muestra es joven y procede sobre todo de redes sociales, y tanto el efecto percibido de la música como los niveles de los trastornos son autoinformados. Además, la mayoría de los encuestados percibe que la música les ayuda, así que la clase "Not.improve" tiene pocos ejemplos para aprender de ella.
 
 ### Estudio comparativo entre regresión y clasificación
 
