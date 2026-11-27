@@ -393,6 +393,7 @@ df %>%
 
 Los niveles de ansiedad y depresión son parecidos hasta los 35 años y luego bajan claramente. En el grupo de más de 50 años la mediana de ansiedad es 3, frente a 6–7 en los grupos más jóvenes. El insomnio y el TOC cambian poco con la edad.
 
+````{=html}
 <!--## Visualización - Correlación entre frecuencias de escucha y trastornos
 
 La matriz de correlación completa tiene demasiadas variables para leerla bien. Nos quedamos solo con lo que nos interesa: las 16 frecuencias de escucha frente a los 4 trastornos. Usamos Spearman porque las frecuencias son ordinales.
@@ -414,6 +415,7 @@ corrplot(cor_freq, method = "color", addCoef.col = "black", number.cex = 0.7,
 ```
 
 #Todas las correlaciones son débiles (ninguna pasa de 0,2 en valor absoluto). Las más altas son la depresión con Metal (0,19), Rock (0,18) y Rap (0,14), y el insomnio con Metal (0,16). Escuchar con frecuencia un género concreto, por sí solo, explica muy poco del nivel de cada trastorno. Esto hay que tenerlo en cuenta para la regresión.-->
+````
 
 Eliminación de filas con valor NA en la variable a predecir en clasificación.
 
@@ -432,3 +434,53 @@ Al estar el dataset desbalanceado, aplicaremos las siguientes técnicas de prepr
 - Uniremos en primer lugar las clases "Worsen" y "No effect" en una sola clase "Not improve" debido a que el número de datos de la clase "Worsen" no es significativo.
 
 - Realizaremos un UP-Sampling de los valores de la clase "Not improve" para equilibrar el número de muestras con la clase mayoritaria "Improve", que permanecerá igual.
+
+### Estudio de la proporción de valores de los niveles de distintos problemas mentales
+
+```{r}
+source("scripts/regression.R")
+```
+
+```{r}
+musicmh_no_nas <- musicmh |> remove_na_target_rows_classification()
+musicmh_no_nas |> regression_count_levels()
+```
+
+Comprobamos que cada problema mental presenta al menos un valor en un nivel fraccional:
+
+- **Ansiedad**: 1 registro en 7.5
+
+- **Depresión**: 2 registros en 3.5
+
+- **Insomnio**: 1 registro en 3.5
+
+- **TOC**: 1 registro en 5.5
+
+Por ende, al no tratarse de cantidades significativas, se agruparán con las del siguiente nivel entero.
+
+```{r}
+musicmh_regr <- musicmh_no_nas |> regression_round_levels()
+musicmh_regr |> regression_count_levels()
+```
+
+```{r}
+musicmh_regr |> regression_get_cor()
+```
+
+```{r}
+musicmh_regr <- musicmh_regr |> preProcess(method = c("center", "scale"))
+```
+
+```{r}
+anxiety_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Anxiety)
+depression_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Depression)
+insomnia_lm <- musicmh_regr |> regression_build_model(musicmh_regr$Insomnia)
+ocd_lm <- musicmh_regr |> regression_build_model(musicmh_regr$OCD)
+```
+
+```{r}
+anxiety_lm |> regression_eval_model(musicmh_regr$Anxiety)
+depression_lm |> regression_eval_model(musicmh_regr$Depression)
+insomnia_lm |> regression_eval_model(musicmh_regr$Insomnia)
+ocd_lm |> regression_eval_model(musicmh_regr$OCD)
+```
