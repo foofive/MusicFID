@@ -28,47 +28,66 @@ library(gapminder)
 library(plotly)
 ```
 
-Trabajo realizado por el *Equipo 4*, compuesto por: - Emilio Manuel Vázquez Cruz - María Quirós Quiroga - Guillermo Rodríguez Narbona - Esther Rocío Valladolid Ortiz - Guillermo Ciria González
+Trabajo realizado por el *Equipo 4*, compuesto por: 
+- Emilio Manuel Vázquez Cruz 
+- María Quirós Quiroga 
+- Guillermo Rodríguez Narbona 
+- Esther Rocío Valladolid Ortiz 
+- Guillermo Ciria González
 
-Realizaremos nuestro estudio sobre el dataset "Music & Mental Health Survey Results" de kaggle, disponible en el enlace: <https://www.kaggle.com/datasets/catherinerasgaitis/mxmh-survey-results>
+## Objetivos del estudio
 
-Esta dataset cuenta con las siguientes columnas:
+Este trabajo analiza la relación entre los hábitos de escucha de música y la salud mental autoinformada a partir de la encuesta "Music & Mental Health Survey Results" de Kaggle.
 
-- **Timestamp**: Momento en el que el usuario respondió la encuesta.
+Abordamos dos problemas de aprendizaje supervisado:
+1. **Efecto percibido de la música** (Music.effects). Clasificamos si la persona percibe que la música mejora su salud mental o no. Con las categorías:
+  - Mejora: La música mejora la salud mental.
+  - No mejora: La música empeora la salud mental o no tiene efecto sobre la misma.
 
-- **Age**: Edad del encuestado.
+2. **Niveles de los trastornos de salud mental** (Anxiety, Depression, Insomnia y OCD). Para cada trastorno estimamos su nivel en la escala del 0 al 10 con dos enfoques que comparamos:
+   - **Clasificación**: cada valor entero de la escala es una clase, el modelo predice la clase.
+   - **Regresión lineal multivariable**: el modelo estima un valor numérico continuo, que se compara con el valor real.
 
-- **Primary.streaming.service**: Servicio de streaming principal usado por el encuestado.
+Además, abordamos X problemas de aprendizaje no supervisado:
+[TODO: añadir problemas de aprendizaje no supervisado]
 
-- **Hours.per.day**: Horas por día dedicadas a escuchar música.
+## Limitaciones de los datos
+Los datos proceden de una encuesta voluntaria que se ofreció principalmente a través de redes sociales (como Reddit y Discord) y en espacios públicos como bibliotecas y parques, de modo que la muestra está sesgada hacia el público que frecuenta estos espacios.
 
-- **While.working**: Representa si el encuestado escucha música mientras trabaja o no.
+Además, todos los datos son autoinformados, lo cual es especialmente relevante para los niveles de ansiedad, depresión, insomnio y TOC.
+Esto puede introducir sesgos y errores de medición, ya que los encuestados pueden no tener una evaluación precisa de su propia salud mental.
 
-- **Instrumentalist**: Representa si el encuestado toca un instrumento de forma habitual o no.
+Por lo tanto, las conclusiones de este trabajo deben interpretarse con cuidado y no generalizarse a la población general.
 
-- **Composer**: Representa si el encuestado compone música o no.
+## Dataset
+Los datos están disponibles en el siguiente enlace: <https://www.kaggle.com/datasets/catherinerasgaitis/mxmh-survey-results>.
 
-- **Fav.genre**: Género musical favorito o principal del encuestado.
+Se indica que los datos solo incluyen a las personas que dieron permiso para publicar sus respuestas y que preguntas más difíciles, como el BPM, eran opcionales, por lo que algunas variables pueden tener valores ausentes.
 
-- **Exploratory**: Representa si el encuestado explora activamente nuevos artistas o géneros.
+Las variables del dataset se pueden agrupar en cuatro bloques.
 
-- **Foreign.languages**: Representa si el encuestado escucha habitualmente música con letras en un idioma que no domina.
+**Contexto musical**:
+- **Age**: edad del encuestado.
+- **Primary.streaming.service**: servicio de streaming principal usado.
+- **Hours.per.day**: horas al día dedicadas a escuchar música.
+- **While.working**: si escucha música mientras trabaja o no.
+- **Instrumentalist**: si toca un instrumento de forma habitual o no.
+- **Composer**: si compone música o no.
+- **Exploratory**: si explora activamente nuevos artistas o géneros.
+- **Foreign.languages**: si escucha habitualmente música con letras en un idioma que no domina.
+- **Fav.genre**: género musical favorito o principal.
+- **BPM**: pulsaciones por minuto (tempo) del género favorito.
 
-- **BPM**: Pulsaciones por minuto o tempo del género favorito del encuestado.
+**Frecuencia de escucha**:
+- **Frequency [género]** (16 columnas: Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock y Video game music): frecuencia con la que la persona escucha cada género. Es una escala ordinal: Never (nunca), Rarely (rara vez), Sometimes (a veces) y Very frequently (muy a menudo).
 
-- **Frequency..[Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock, Video game music]**: Frecuencia con la que el encuestado escucha cada uno de los géneros musicales listados (escala ordinal: Never, Rarely, Sometimes, Very frequently).
+**Salud mental autoinformada**:
+- **Anxiety**, **Depression**, **Insomnia** y **OCD**: niveles de ansiedad, depresión, insomnio y TOC que la persona percibe en sí misma, en una escala de 0 (no lo experimenta) a 10 (lo experimenta de forma regular, constante o extrema).
 
-- **Anxiety**: Nivel de ansiedad autoinformado por el encuestado (escala de 0 a 10).
-
-- **Depression**: Nivel de depresión autoinformado por el encuestado (escala de 0 a 10).
-
-- **Insomnia**: Nivel de insomnio autoinformado por el encuestado (escala de 0 a 10).
-
-- **OCD**: Nivel de TOC autoinformado por el encuestado (escala de 0 a 10).
-
-- **Music.effects**: Representa si la música mejora, empeora o no tiene efecto sobre la salud mental del encuestado.
-
-- **Permissions**: Si el encuetado da permiso para publicar los datos.
+**Otras variables**:
+- **Timestamp**: momento en el que respondió la encuesta.
+- **Music.effects**: si la persona considera que la música mejora, empeora o no tiene efecto sobre la salud mental.
+- **Permissions**: si se dio permiso para publicar los datos de la encuesta.
 
 ## Lectura
 
