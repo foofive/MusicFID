@@ -11,13 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-# install.packages("tidyverse")
-# install.packages("caret")
-# install.packages("ggplot2")
-# install.packages("corrplot")
-# install.packages("dplyr")
-# install.packages("gapminder")
-# install.packages("plotly")
+install.packages("tidyverse")
+install.packages("caret")
+install.packages("ggplot2")
+install.packages("corrplot")
+install.packages("dplyr")
+install.packages("gapminder")
+install.packages("plotly")
 
 library(tidyverse)
 library(caret)
@@ -58,13 +58,28 @@ Se indica que los datos solo incluyen a las personas que dieron permiso para pub
 
 Las variables del dataset se pueden agrupar en cuatro bloques.
 
-**Contexto musical**: - **Age**: edad del encuestado. - **Primary.streaming.service**: servicio de streaming principal usado. - **Hours.per.day**: horas al día dedicadas a escuchar música. - **While.working**: si escucha música mientras trabaja o no. - **Instrumentalist**: si toca un instrumento de forma habitual o no. - **Composer**: si compone música o no. - **Exploratory**: si explora activamente nuevos artistas o géneros. - **Foreign.languages**: si escucha habitualmente música con letras en un idioma que no domina. - **Fav.genre**: género musical favorito o principal. - **BPM**: pulsaciones por minuto (tempo) del género favorito.
+**Contexto musical**:
+- **Age**: edad del encuestado.
+- **Primary.streaming.service**: servicio de streaming principal usado.
+- **Hours.per.day**: horas al día dedicadas a escuchar música.
+- **While.working**: si escucha música mientras trabaja o no.
+- **Instrumentalist**: si toca un instrumento de forma habitual o no.
+- **Composer**: si compone música o no.
+- **Exploratory**: si explora activamente nuevos artistas o géneros.
+- **Foreign.languages**: si escucha habitualmente música con letras en un idioma que no domina.
+- **Fav.genre**: género musical favorito o principal.
+- **BPM**: pulsaciones por minuto (tempo) del género favorito.
 
-**Frecuencia de escucha**: - **Frequency [género]** (16 columnas: Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock y Video game music): frecuencia con la que la persona escucha cada género. Es una escala ordinal: Never (nunca), Rarely (rara vez), Sometimes (a veces) y Very frequently (muy a menudo).
+**Frecuencia de escucha**:
+- **Frequency [género]** (16 columnas: Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock y Video game music): frecuencia con la que la persona escucha cada género. Es una escala ordinal: Never (nunca), Rarely (rara vez), Sometimes (a veces) y Very frequently (muy a menudo).
 
-**Salud mental autoinformada**: - **Anxiety**, **Depression**, **Insomnia** y **OCD**: niveles de ansiedad, depresión, insomnio y TOC que la persona percibe en sí misma, en una escala de 0 (no lo experimenta) a 10 (lo experimenta de forma regular, constante o extrema).
+**Salud mental autoinformada**:
+- **Anxiety**, **Depression**, **Insomnia** y **OCD**: niveles de ansiedad, depresión, insomnio y TOC que la persona percibe en sí misma, en una escala de 0 (no lo experimenta) a 10 (lo experimenta de forma regular, constante o extrema).
 
-**Otras variables**: - **Timestamp**: momento en el que respondió la encuesta. - **Music.effects**: si la persona considera que la música mejora, empeora o no tiene efecto sobre la salud mental. - **Permissions**: si se dio permiso para publicar los datos de la encuesta.
+**Otras variables**:
+- **Timestamp**: momento en el que respondió la encuesta.
+- **Music.effects**: si la persona considera que la música mejora, empeora o no tiene efecto sobre la salud mental.
+- **Permissions**: si se dio permiso para publicar los datos de la encuesta.
 
 ## Lectura
 
@@ -79,8 +94,7 @@ Comprobamos que las dimensiones del dataset son las esperadas:
 ```{r}
 dim(raw_musicmh)
 ```
-
-El dataset contiene 736 respuestas (filas) y 33 variables (columnas).
+El dataset contiene 736 respuestas (filas) y 33 variables (columnas). 
 
 Podemos hacernos a la idea de la estructura cargada con:
 
@@ -94,11 +108,21 @@ Las columnas coinciden con las del fichero original. Además, comprobamos los ti
 str(raw_musicmh)
 ```
 
-Hay 26 variables de texto (char): - Las 16 columnas de frecuencia de escucha de cada género. - Las respuestas de Sí/No (While.working, Instrumentalist, Composer, Exploratory, Foreign.languages). - El género favorito (Fav.genre). - El efecto percibido de la música (Music.effects). - La fecha de realización del formulario (Timestamp). - El servicio de streaming principal (Primary.streaming.service). - El permiso para publicar los datos (Permissions).
+Hay 26 variables de texto (char):
+- Las 16 columnas de frecuencia de escucha de cada género.
+- Las respuestas de Sí/No (While.working, Instrumentalist, Composer, Exploratory, Foreign.languages).
+- El género favorito (Fav.genre).
+- El efecto percibido de la música (Music.effects).
+- La fecha de realización del formulario (Timestamp).
+- El servicio de streaming principal (Primary.streaming.service).
+- El permiso para publicar los datos (Permissions).
 
-Las 7 variables restantes son numéricas: - Enteros (int): Age y BPM. - Números decimales (num): Hours.per.day, Anxiety, Depression, Insomnia y OCD.
+Las 7 variables restantes son numéricas:
+- Enteros (int): Age y BPM.
+- Números decimales (num): Hours.per.day, Anxiety, Depression, Insomnia y OCD.
 
-Tendremos que convertir las variables de texto que queremos usar a sus tipos adecuados durante el preprocesamiento. Además, es interesante que aunque la descripción las presenta como una escala de 0 a 10, algunas respuestas tienen valores decimales, por lo que no son enteros, sino numéricas. Esto también se tendrá en cuenta durante el estudio.
+Tendremos que convertir las variables de texto que queremos usar a sus tipos adecuados durante el preprocesamiento.
+Además, es interesante que aunque la descripción las presenta como una escala de 0 a 10, algunas respuestas tienen valores decimales, por lo que no son enteros, sino numéricas. Esto también se tendrá en cuenta durante el estudio.
 
 Visualizamos un resumen de los datos para ver los rangos de las variables numéricas y los valores ausentes:
 
@@ -108,11 +132,17 @@ summary(raw_musicmh)
 
 El resumen nos indica algunos puntos que tendremos que tener en cuenta.
 
-Por un lado, podemos observar los valores ausentes de las variables numéricas: - Age: 1 valor ausente. - BPM: 107 valores ausentes. En las variables de texto, summary() solo muestra la longitud, la clase y el modo, así que sus valores ausentes (While.working, Instrumentalist, Composer, Foreign.languages y Music.effects) se contarán en el preprocesado.
+Por un lado, podemos observar los valores ausentes de las variables numéricas:
+- Age: 1 valor ausente.
+- BPM: 107 valores ausentes.
+En las variables de texto, summary() solo muestra la longitud, la clase y el modo, así que sus valores ausentes (While.working, Instrumentalist, Composer, Foreign.languages y Music.effects) se contarán en el preprocesado.
 
-Además, podemos observar algunos valores extraños en las variables numéricas: - En el BPM, el valor mínimo es 0 y el máximo es 1,00e+09, lo cual conociendo el dominio es claramente un error que deberemos tratar. - En las horas al día, el valor mínimo es 0 y el máximo 24. El 0 indica que la persona no escucha música a diario, lo que es poco habitual en una encuesta sobre música, y el 24 implica escuchar durante todo el día.
+Además, podemos observar algunos valores extraños en las variables numéricas:
+- En el BPM, el valor mínimo es 0 y el máximo es 1,00e+09, lo cual conociendo el dominio es claramente un error que deberemos tratar.
+- En las horas al día, el valor mínimo es 0 y el máximo 24. El 0 indica que la persona no escucha música a diario, lo que es poco habitual en una encuesta sobre música, y el 24 implica escuchar durante todo el día.
 
-También nos confirma que para las variables de salud mental (Anxiety, Depression, Insomnia y OCD) no tenemos este problema de valores extraños, ya que los valores mínimo y máximo coinciden con los esperados (0 y 10). Por otro lado, podemos observar que la edad mediana es de 21 años, lo que confirma que la muestra es joven. La mediana de horas escuchadas al día es de 3, la mitad de los encuestados escucha al menos 3 horas al día.
+También nos confirma que para las variables de salud mental (Anxiety, Depression, Insomnia y OCD) no tenemos este problema de valores extraños, ya que los valores mínimo y máximo coinciden con los esperados (0 y 10).
+Por otro lado, podemos observar que la edad mediana es de 21 años, lo que confirma que la muestra es joven. La mediana de horas escuchadas al día es de 3, la mitad de los encuestados escucha al menos 3 horas al día.
 
 ## Preprocesamiento
 
@@ -407,7 +437,6 @@ df %>%
 
 Los niveles de ansiedad y depresión son parecidos hasta los 35 años y luego bajan claramente. En el grupo de más de 50 años la mediana de ansiedad es 3, frente a 6–7 en los grupos más jóvenes. El insomnio y el TOC cambian poco con la edad.
 
-````{=html}
 <!--## Visualización - Correlación entre frecuencias de escucha y trastornos
 
 La matriz de correlación completa tiene demasiadas variables para leerla bien. Nos quedamos solo con lo que nos interesa: las 16 frecuencias de escucha frente a los 4 trastornos. Usamos Spearman porque las frecuencias son ordinales.
@@ -429,7 +458,6 @@ corrplot(cor_freq, method = "color", addCoef.col = "black", number.cex = 0.7,
 ```
 
 #Todas las correlaciones son débiles (ninguna pasa de 0,2 en valor absoluto). Las más altas son la depresión con Metal (0,19), Rock (0,18) y Rap (0,14), y el insomnio con Metal (0,16). Escuchar con frecuencia un género concreto, por sí solo, explica muy poco del nivel de cada trastorno. Esto hay que tenerlo en cuenta para la regresión.-->
-````
 
 Eliminación de filas con valor NA en la variable a predecir en clasificación.
 
@@ -442,7 +470,7 @@ musicmh_class = remove_na_target_rows_classification(musicmh)
 ### Estudio de la proporción de valores del atributo Music.effects
 
 ```{r}
-musicmh %>% remove_na_target_rows_classification() %>% mutate(Music.effects = Music.effects -1) %>% group_by(Music.effects) %>% count()
+musicmh %>% remove_na_target_rows_classification() %>% mutate(Music.effects = Music.effects) %>% group_by(Music.effects) %>% count()
 ```
 
 Al estar el dataset desbalanceado, aplicaremos las siguientes técnicas de preprocesamiento:
@@ -526,3 +554,191 @@ k = 10
 
 lms <- musicmh_regr |> regression_train_models(k)
 ```
+
+## Aprendizaje supervisado: predicción de Music.effects
+
+```{r}
+source("scripts/supervised_learning.R")
+```
+
+### Agrupación de clases
+
+Partimos de `musicmh_class`, el dataset ya preprocesado e imputado y sin las filas con NA en la variable objetivo. Unimos las clases "Worsen" (0) y "No effect" (1) en una única clase "Not.improve" y mantenemos "Improve" (2).
+
+```{r}
+musicmh_sup = binarize_music_effects(musicmh_class)
+table(musicmh_sup$Music.effects)
+```
+
+Las variables Anxiety, Depression, Insomnia y OCD se mantienen como predictoras, ya que es razonable que el nivel de cada trastorno influya en el efecto que la persona percibe de la música.
+
+### Partición en entrenamiento y test
+
+Dividimos el dataset en un 80% para entrenamiento y un 20% para test. La partición es estratificada de modo que ambos conjuntos conservan la proporción original de clases. Fijamos una semilla para que el resultado sea reproducible.
+
+```{r}
+music_split = split_train_test(musicmh_sup)
+music_train = music_split$train
+music_test = music_split$test
+
+prop.table(table(music_train$Music.effects))
+prop.table(table(music_test$Music.effects))
+```
+
+### Up-sampling del conjunto de entrenamiento
+
+Para equilibrar las clases, replicamos aleatoriamente ejemplos de la clase minoritaria "Not.improve" hasta igualar el número de ejemplos de "Improve". El up-sampling se aplica sobre el conjunto de entrenamiento. El conjunto de test no se modifica, para que la evaluación refleje la distribución real de los datos y no incluya copias de ejemplos de entrenamiento.
+
+```{r}
+music_train_up = upsample_train(music_train)
+
+table(music_train$Music.effects)
+table(music_train_up$Music.effects)
+table(music_test$Music.effects)
+```
+
+Tras el up-sampling, el conjunto de entrenamiento queda balanceado, mientras que el de test mantiene el desbalanceo original.
+
+### Evaluación
+
+Al estar las clases desbalanceadas, la accuracy no es una buena métrica, ya que un modelo que siempre prediga "Improve" ya acierta en torno al 75% de los casos. Por eso usamos como métrica principal la balanced accuracy, que calcula la media de la sensibilidad y la especificidad, y nos indica qué tan bien predice cada clase. También mostramos el Kappa, que mide el acuerdo entre las predicciones y los valores reales ajustado por el azar. Como método de validación usamos validación cruzada de 10 particiones repetida 3 veces sobre el conjunto de entrenamiento. Generamos las particiones una sola vez y se las pasamos a todos los modelos, para que todos se evalúen exactamente sobre los mismos datos y la comparación sea justa. El conjunto de test solo se usa al final, para la evaluación definitiva.
+
+```{r}
+x_train = music_train[, setdiff(names(music_train), "Music.effects")]
+y_train = music_train$Music.effects
+x_test = music_test[, names(x_train)]
+y_test = music_test$Music.effects
+
+set.seed(42)
+cv_index = createMultiFolds(y_train, k = 10, times = 3)
+
+ctrl_up = music_effects_control(cv_index)
+ctrl_none = music_effects_control(cv_index, sampling = NULL)
+```
+
+### ZeroR
+
+ZeroR es el clasificador más sencillo posible ya que ignora todos los atributos y predice siempre la clase mayoritaria. Lo usamos como línea base: cualquier modelo útil tiene que superarlo. Lo entrenamos sin up-sampling, ya que con las clases equilibradas no existiría una clase mayoritaria y el modelo no tendría sentido.
+
+```{r}
+set.seed(42)
+model_zeror = train(x_train, y_train, method = "null",
+                    trControl = ctrl_none, metric = "BalancedAccuracy")
+model_zeror$results
+```
+
+### OneR
+
+```{r}
+set.seed(42)
+model_oner = train(x_train, y_train, method = oner_model,
+                   trControl = ctrl_up, metric = "BalancedAccuracy")
+model_oner$results
+```
+
+Atributo elegido por el modelo final, regla generada y tasa de error en entrenamiento de los mejores atributos:
+
+```{r}
+model_oner$finalModel$col
+model_oner$finalModel$pred
+head(model_oner$finalModel$errors, 10)
+```
+
+La regla elegida usa `While.working`: si la persona escucha música mientras trabaja, predice "Improve" y, si no, "Not.improve". Los errores de los mejores atributos son muy parecidos, lo que indica que ningún atributo por separado discrimina bien entre las dos clases. Su balanced accuracy en validación cruzada apenas supera a la de ZeroR.
+
+### kNN
+
+```{r}
+set.seed(42)
+model_knn = train(x_train, y_train, method = "knn",
+                  preProcess = c("zv", "center", "scale"),
+                  tuneGrid = data.frame(k = seq(1, 51, 2)),
+                  trControl = ctrl_up, metric = "BalancedAccuracy")
+model_knn$bestTune
+plot(model_knn)
+```
+
+### Naive Bayes
+
+```{r}
+set.seed(42)
+model_nb = train(x_train, y_train, method = nb_model,
+                 trControl = ctrl_up, metric = "BalancedAccuracy")
+model_nb$results
+```
+
+Naive Bayes tiene una sensibilidad muy alta pero una especificidad muy baja y clasifica casi todo como "Not.improve". Las hipótesis del modelo no se cumplen bien aquí: muchas variables son ordinales con pocos valores o binarias (no siguen una distribución normal) y las frecuencias de escucha de géneros parecidos están correlacionadas entre sí.
+
+### Árboles de decisión
+
+Entrenamos dos árboles con `rpart`, que cambian en el criterio usado para elegir cada división. En ambos casos ajustamos el parámetro de complejidad `cp`, que controla la poda.
+
+```{r}
+cp_grid = data.frame(cp = c(0, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.075, 0.1))
+
+set.seed(42)
+model_cart = train(x_train, y_train, method = "rpart",
+                   tuneGrid = cp_grid,
+                   trControl = ctrl_up, metric = "BalancedAccuracy")
+
+set.seed(42)
+model_id3 = train(x_train, y_train, method = "rpart",
+                  parms = list(split = "information"),
+                  tuneGrid = cp_grid,
+                  trControl = ctrl_up, metric = "BalancedAccuracy")
+
+model_cart$bestTune
+model_id3$bestTune
+```
+
+Representamos el árbol obtenido con el criterio de entropía:
+
+```{r}
+rpart.plot::rpart.plot(model_id3$finalModel, type = 2, extra = 104,
+                       box.palette = "BuOr", tweak = 1.1)
+```
+
+Y la importancia de las variables según el árbol:
+
+```{r}
+plot(varImp(model_id3), top = 15)
+```
+
+### Comparación de los modelos
+
+#### Validación cruzada
+
+```{r}
+music_models = list(ZeroR = model_zeror, OneR = model_oner, kNN = model_knn,
+                    NaiveBayes = model_nb, CART = model_cart, ID3 = model_id3)
+
+music_resamples = resamples(music_models)
+summary(music_resamples, metric = c("BalancedAccuracy", "Kappa", "Sens", "Spec", "F1"))
+```
+
+```{r}
+bwplot(music_resamples, metric = c("BalancedAccuracy", "Kappa", "F1"))
+```
+
+#### Conjunto de test
+
+Por último, evaluamos cada modelo final sobre el conjunto de test, que no se ha usado en ningún momento del entrenamiento:
+
+```{r}
+music_test_results = evaluate_on_test(music_models, x_test, y_test)
+music_test_results %>% arrange(desc(BalancedAccuracy))
+```
+
+### Conclusiones
+
+Predecir si una persona percibe que la música mejora su salud mental a partir de sus hábitos de escucha y de sus niveles de trastorno resulta un problema difícil. Ninguno de los modelos consigue separar con claridad las dos clases. OneR apenas supera a ZeroR, lo que indica que ningún atributo por sí solo aporta información suficiente, y los modelos que combinan varios atributos solo consiguen una mejora moderada.
+
+ZeroR, al predecir siempre "Improve", obtiene una balanced accuracy de 0,5 y un Kappa de 0, y nos sirve como referencia. Esto confirma que la accuracy por sí sola sería engañosa: este modelo acierta en torno al 75% de los casos sin haber aprendido nada.
+
+Naive Bayes es el modelo que peor se adapta a los datos, porque sus hipótesis (independencia entre atributos y distribución normal de las variables numéricas) no se cumplen. Las frecuencias de escucha de géneros parecidos están relacionadas entre sí y muchas variables son ordinales o binarias.
+
+Hay que tener en cuenta que el conjunto de test es pequeño (alrededor de 145 ejemplos, de los cuales solo unos 37 son de la clase "Not.improve"). Por eso, unos pocos aciertos o fallos en esa clase cambian bastante las métricas, y las diferencias pequeñas entre modelos en test no deben tomarse como concluyentes.
+
+El up-sampling del conjunto de entrenamiento obliga a los modelos a prestar atención a la clase minoritaria. Sin él, la mayoría tendería a predecir siempre "Improve", como hace ZeroR.
+
+Por último, estos resultados están condicionados por las limitaciones de los datos que comentamos al principio. La muestra es joven y procede sobre todo de redes sociales, y tanto el efecto percibido de la música como los niveles de los trastornos son autoinformados. Además, la mayoría de los encuestados percibe que la música les ayuda, así que la clase "Not.improve" tiene pocos ejemplos para aprender de ella.
