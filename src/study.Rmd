@@ -11,10 +11,7 @@ editor_options:
 
 # Music and Mental Health Survey Results.
 
-# Music and Mental Health Survey Results.
-
 ## FID Project. 2026/2027
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -40,8 +37,17 @@ library(plotly)
 library(Rtsne)
 ```
 
-Trabajo realizado por el *Equipo 4*, compuesto por: - Emilio Manuel Vázquez Cruz - María Quirós Quiroga - Guillermo Rodríguez Narbona - Esther Rocío Valladolid Ortiz - Guillermo Ciria González
-Trabajo realizado por el *Equipo 4*, compuesto por: - Emilio Manuel Vázquez Cruz - María Quirós Quiroga - Guillermo Rodríguez Narbona - Esther Rocío Valladolid Ortiz - Guillermo Ciria González
+Trabajo realizado por el *Equipo 4*, compuesto por:
+
+-   Emilio Manuel Vázquez Cruz
+
+-   María Quirós Quiroga
+
+-   Guillermo Rodríguez Narbona
+
+-   Esther Rocío Valladolid Ortiz
+
+-   Guillermo Ciria González
 
 ## Objetivos del estudio
 
@@ -49,16 +55,21 @@ Este trabajo analiza la relación entre los hábitos de escucha de música y la 
 
 Abordamos dos problemas de aprendizaje supervisado:
 
-1\. **Efecto percibido de la música** (Music.effects). Clasificamos si la persona percibe que la música mejora su salud mental o no. Con las categorías:
+1\.
+**Efecto percibido de la música** (Music.effects).
+Clasificamos si la persona percibe que la música mejora su salud mental o no.
+Con las categorías:
 
-- Mejora: La música mejora la salud mental.
+-   Mejora: La música mejora la salud mental.
 
-- No mejora: La música empeora la salud mental o no tiene efecto sobre la misma.
+-   No mejora: La música empeora la salud mental o no tiene efecto sobre la misma.
 
-2\. **Niveles de los trastornos de salud mental** (Anxiety, Depression, Insomnia y OCD). Para cada trastorno estimamos su nivel en la escala del 0 al 10 con dos enfoques que comparamos:
+2\.
+**Niveles de los trastornos de salud mental** (Anxiety, Depression, Insomnia y OCD).
+Para cada trastorno estimamos su nivel en la escala del 0 al 10 con dos enfoques que comparamos:
 
-- **Clasificación**: cada valor entero de la escala es una clase, el modelo predice la clase.
-- **Regresión lineal multivariable**: el modelo estima un valor numérico continuo, que se compara con el valor real.
+-   **Clasificación**: cada valor entero de la escala es una clase, el modelo predice la clase.
+-   **Regresión lineal multivariable**: el modelo estima un valor numérico continuo, que se compara con el valor real.
 
 Además, abordamos X problemas de aprendizaje no supervisado: [TODO: añadir problemas de aprendizaje no supervisado]
 
@@ -81,41 +92,41 @@ Las variables del dataset se pueden agrupar en cuatro bloques.
 
 **Contexto musical**:
 
-- **Age**: edad del encuestado.
+-   **Age**: edad del encuestado.
 
-- **Primary.streaming.service**: servicio de streaming principal usado.
+-   **Primary.streaming.service**: servicio de streaming principal usado.
 
-- **Hours.per.day**: horas al día dedicadas a escuchar música.
+-   **Hours.per.day**: horas al día dedicadas a escuchar música.
 
-- **While.working**: si escucha música mientras trabaja o no.
+-   **While.working**: si escucha música mientras trabaja o no.
 
-- **Instrumentalist**: si toca un instrumento de forma habitual o no.
+-   **Instrumentalist**: si toca un instrumento de forma habitual o no.
 
-- **Composer**: si compone música o no.
+-   **Composer**: si compone música o no.
 
-- **Exploratory**: si explora activamente nuevos artistas o géneros.
+-   **Exploratory**: si explora activamente nuevos artistas o géneros.
 
-- **Foreign.languages**: si escucha habitualmente música con letras en un idioma que no domina.
+-   **Foreign.languages**: si escucha habitualmente música con letras en un idioma que no domina.
 
-- **Fav.genre**: género musical favorito o principal.
+-   **Fav.genre**: género musical favorito o principal.
 
-- **BPM**: pulsaciones por minuto (tempo) del género favorito.
+-   **BPM**: pulsaciones por minuto (tempo) del género favorito.
 
 **Frecuencia de escucha**:
 
-- **Frequency [género]** (16 columnas: Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock y Video game music): frecuencia con la que la persona escucha cada género. Es una escala ordinal: Never (nunca), Rarely (rara vez), Sometimes (a veces) y Very frequently (muy a menudo).
+-   **Frequency [género]** (16 columnas: Classical, Country, EDM, Folk, Gospel, Hip hop, Jazz, K pop, Latin, Lofi, Metal, Pop, R&B, Rap, Rock y Video game music): frecuencia con la que la persona escucha cada género. Es una escala ordinal: Never (nunca), Rarely (rara vez), Sometimes (a veces) y Very frequently (muy a menudo).
 
 **Salud mental autoinformada**:
 
-- **Anxiety**, **Depression**, **Insomnia** y **OCD**: niveles de ansiedad, depresión, insomnio y TOC que la persona percibe en sí misma, en una escala de 0 (no lo experimenta) a 10 (lo experimenta de forma regular, constante o extrema).
+-   **Anxiety**, **Depression**, **Insomnia** y **OCD**: niveles de ansiedad, depresión, insomnio y TOC que la persona percibe en sí misma, en una escala de 0 (no lo experimenta) a 10 (lo experimenta de forma regular, constante o extrema).
 
 **Otras variables**:
 
-- **Timestamp**: momento en el que respondió la encuesta.
+-   **Timestamp**: momento en el que respondió la encuesta.
 
-- **Music.effects**: si la persona considera que la música mejora, empeora o no tiene efecto sobre la salud mental.
+-   **Music.effects**: si la persona considera que la música mejora, empeora o no tiene efecto sobre la salud mental.
 
-- **Permissions**: si se dio permiso para publicar los datos de la encuesta.
+-   **Permissions**: si se dio permiso para publicar los datos de la encuesta.
 
 ## Lectura
 
@@ -134,8 +145,6 @@ dim(raw_musicmh)
 
 El dataset contiene 736 respuestas (filas) y 33 variables (columnas).
 
-El dataset contiene 736 respuestas (filas) y 33 variables (columnas).
-
 Podemos hacernos a la idea de la estructura cargada con:
 
 ```{r}
@@ -151,27 +160,29 @@ str(raw_musicmh)
 
 Hay 26 variables de texto (char):
 
-- Las 16 columnas de frecuencia de escucha de cada género.
+-   Las 16 columnas de frecuencia de escucha de cada género.
 
-- Las respuestas de Sí/No (While.working, Instrumentalist, Composer, Exploratory, Foreign.languages).
+-   Las respuestas de Sí/No (While.working, Instrumentalist, Composer, Exploratory, Foreign.languages).
 
-- El género favorito (Fav.genre).
+-   El género favorito (Fav.genre).
 
-- El efecto percibido de la música (Music.effects).
+-   El efecto percibido de la música (Music.effects).
 
-- La fecha de realización del formulario (Timestamp).
+-   La fecha de realización del formulario (Timestamp).
 
-- El servicio de streaming principal (Primary.streaming.service).
+-   El servicio de streaming principal (Primary.streaming.service).
 
-- El permiso para publicar los datos (Permissions).
+-   El permiso para publicar los datos (Permissions).
 
 Las 7 variables restantes son numéricas:
 
-- Enteros (int): Age y BPM.
+-   Enteros (int): Age y BPM.
 
-- Números decimales (num): Hours.per.day, Anxiety, Depression, Insomnia y OCD.
+-   Números decimales (num): Hours.per.day, Anxiety, Depression, Insomnia y OCD.
 
-Tendremos que convertir las variables de texto que queremos usar a sus tipos adecuados durante el preprocesamiento. Además, es interesante que aunque la descripción las presenta como una escala de 0 a 10, algunas respuestas tienen valores decimales, por lo que no son enteros, sino numéricas. Esto también se tendrá en cuenta durante el estudio.
+Tendremos que convertir las variables de texto que queremos usar a sus tipos adecuados durante el preprocesamiento.
+Además, es interesante que aunque la descripción las presenta como una escala de 0 a 10, algunas respuestas tienen valores decimales, por lo que no son enteros, sino numéricas.
+Esto también se tendrá en cuenta durante el estudio.
 
 Visualizamos un resumen de los datos para ver los rangos de las variables numéricas y los valores ausentes:
 
@@ -183,13 +194,21 @@ El resumen nos indica algunos puntos que tendremos que tener en cuenta.
 
 Por un lado, podemos observar los valores ausentes de las variables numéricas:
 
-- Age: 1 valor ausente.
+-   Age: 1 valor ausente.
 
-- BPM: 107 valores ausentes. En las variables de texto, summary() solo muestra la longitud, la clase y el modo, así que sus valores ausentes (While.working, Instrumentalist, Composer, Foreign.languages y Music.effects) se contarán en el preprocesado.
+-   BPM: 107 valores ausentes.
+    En las variables de texto, summary() solo muestra la longitud, la clase y el modo, así que sus valores ausentes (While.working, Instrumentalist, Composer, Foreign.languages y Music.effects) se contarán en el preprocesado.
 
-Además, podemos observar algunos valores extraños en las variables numéricas: - En el BPM, el valor mínimo es 0 y el máximo es 1,00e+09, lo cual conociendo el dominio es claramente un error que deberemos tratar. - En las horas al día, el valor mínimo es 0 y el máximo 24. El 0 indica que la persona no escucha música a diario, lo que es poco habitual en una encuesta sobre música, y el 24 implica escuchar durante todo el día.
+Además, podemos observar algunos valores extraños en las variables numéricas:
 
-También nos confirma que para las variables de salud mental (Anxiety, Depression, Insomnia y OCD) no tenemos este problema de valores extraños, ya que los valores mínimo y máximo coinciden con los esperados (0 y 10). Por otro lado, podemos observar que la edad mediana es de 21 años, lo que confirma que la muestra es joven. La mediana de horas escuchadas al día es de 3, la mitad de los encuestados escucha al menos 3 horas al día.
+-   En el BPM, el valor mínimo es 0 y el máximo es 1,00e+09, lo cual conociendo el dominio es claramente un error que deberemos tratar.
+
+-   En las horas al día, el valor mínimo es 0 y el máximo 24.
+    El 0 indica que la persona no escucha música a diario, lo que es poco habitual en una encuesta sobre música, y el 24 implica escuchar durante todo el día.
+
+También nos confirma que para las variables de salud mental (Anxiety, Depression, Insomnia y OCD) no tenemos este problema de valores extraños, ya que los valores mínimo y máximo coinciden con los esperados (0 y 10).
+Por otro lado, podemos observar que la edad mediana es de 21 años, lo que confirma que la muestra es joven.
+La mediana de horas escuchadas al día es de 3, la mitad de los encuestados escucha al menos 3 horas al día.
 
 ## Preprocesamiento
 
@@ -203,13 +222,14 @@ source("scripts/preprocessing.R")
 
 ### Limpieza
 
-Para limpiar el dataset, eliminamos las columnas que no son relevantes y no aportan información al estudio. Estas son:
+Para limpiar el dataset, eliminamos las columnas que no son relevantes y no aportan información al estudio.
+Estas son:
 
-- Timestamp: registra la fecha y hora en la que se envió el formulario, no aporta información sobre música ni salud mental.
+-   Timestamp: registra la fecha y hora en la que se envió el formulario, no aporta información sobre música ni salud mental.
 
-- Permissions: todos los registros del dataset han dado permiso, por lo que tiene el mismo valor para todos y no aporta información.
+-   Permissions: todos los registros del dataset han dado permiso, por lo que tiene el mismo valor para todos y no aporta información.
 
-- Primary.streaming.service: no responde a ninguna de nuestras preguntas.
+-   Primary.streaming.service: no responde a ninguna de nuestras preguntas.
 
 Usamos la función remove_noise_columns sobre nuestro dataset para eliminar estas columnas:
 
@@ -217,7 +237,11 @@ Usamos la función remove_noise_columns sobre nuestro dataset para eliminar esta
 musicmh = remove_noise_columns(raw_musicmh)
 ```
 
-La segunda parte de la limpieza consiste en convertir las variables a los tipos adecuados. Las variables numéricas ya están correctamente tipadas, pero las variables de texto debemos convertirlas a factores. Las frecuencias de escucha de cada género y los efectos percibidos de la música los convertimos a factores ordenados, ya que tienen un orden implícito (de menor a mayor frecuencia o efecto). Las demás variables de texto pueden tomar el valor Sí o No, las convertimos a factores sin orden. La única excepción es la variable Fav.genre, que convertiremos más adelante a variables dummy, ya que es una variable nominal con 16 valores posibles.
+La segunda parte de la limpieza consiste en convertir las variables a los tipos adecuados.
+Las variables numéricas ya están correctamente tipadas, pero las variables de texto debemos convertirlas a factores.
+Las frecuencias de escucha de cada género y los efectos percibidos de la música los convertimos a factores ordenados, ya que tienen un orden implícito (de menor a mayor frecuencia o efecto).
+Las demás variables de texto pueden tomar el valor Sí o No, las convertimos a factores sin orden.
+La única excepción es la variable Fav.genre, que convertiremos más adelante a variables dummy, ya que es una variable nominal con 16 valores posibles.
 
 ```{r}
 musicmh = convert_columns_to_factor(musicmh)
@@ -229,21 +253,22 @@ Con la función summary(), comprobamos que las variables se han convertido corre
 summary(musicmh)
 ```
 
-Ahora que las variables de texto son factores, podemos observar sus valores ausentes. Estos recuentos son previos a la eliminación de la fila con más NA, que se explica más adelante:
+Ahora que las variables de texto son factores, podemos observar sus valores ausentes.
+Estos recuentos son previos a la eliminación de la fila con más NA, que se explica más adelante:
 
-- Age: 1 NA
+-   Age: 1 NA
 
-- While.working: 3 NAs
+-   While.working: 3 NAs
 
-- Instrumentalist: 4 NAs
+-   Instrumentalist: 4 NAs
 
-- Composer: 1 NA
+-   Composer: 1 NA
 
-- Foreign.languages: 4 NAs
+-   Foreign.languages: 4 NAs
 
-- BPM: 107 NAs
+-   BPM: 107 NAs
 
-- Music.effects: 8 NAs
+-   Music.effects: 8 NAs
 
 Trataremos estos valores en una sección posterior, ya que para poder imputarlos primero debemos tratar los outliers de la variable BPM.
 
@@ -252,18 +277,25 @@ Trataremos estos valores en una sección posterior, ya que para poder imputarlos
 Las variables de tipo factor no se pueden usar directamente en muchos algoritmos de aprendizaje automático, por lo que las codificamos a variables numéricas.
 Las variables de tipo factor no se pueden usar directamente en muchos algoritmos de aprendizaje automático, por lo que las codificamos a variables numéricas.
 
-Para codificar las variables ordinales usamos la función ordinal_cols_encoder, que asigna un número entero a cada nivel del factor manteniendo el orden de los niveles. Por ejemplo, para las variables de frecuencia de escucha, asignamos 0 a "Never", 1 a "Rarely", 2 a "Sometimes" y 3 a "Very frequently". Codificamos también las variables binarias Sí/No, asignando 0 a "No" y 1 a "Yes". Para `Music.effects` aplicamos el mismo criterio: 0 para "Worsen", 1 para "No effect" y 2 para "Improve".
+Para codificar las variables ordinales usamos la función ordinal_cols_encoder, que asigna un número entero a cada nivel del factor manteniendo el orden de los niveles.
+Por ejemplo, para las variables de frecuencia de escucha, asignamos 0 a "Never", 1 a "Rarely", 2 a "Sometimes" y 3 a "Very frequently".
+Codificamos también las variables binarias Sí/No, asignando 0 a "No" y 1 a "Yes".
+Para `Music.effects` aplicamos el mismo criterio: 0 para "Worsen", 1 para "No effect" y 2 para "Improve".
 
 ```{r}
 musicmh = ordinal_cols_encoder(musicmh)
 ```
 
-Por otro lado, para codificar las variables nominales usamos la función nominal_cols_encoder. Esta función usa el método dummyVars() para crear una variable para cada nivel del factor, esto lo aplicamos sobre la única variable nominal que tenemos, Fav.genre que tiene 16 valores. El resultado es un dataset con 16 columnas nuevas, una por cada valor de Fav.genre, con valores 0 o 1 indicando si la persona tiene ese género favorito o no. La columna original Fav.genre se elimina. Como cada persona tiene un único género favorito, en cada fila solo una de las 16 columnas vale 1. Por eso las columnas no son independientes, algo que hay que tener en cuenta en la regresión.
+Por otro lado, para codificar las variables nominales usamos la función nominal_cols_encoder.
+Esta función usa el método dummyVars() para crear una variable para cada nivel del factor, esto lo aplicamos sobre la única variable nominal que tenemos, Fav.genre que tiene 16 valores.
+El resultado es un dataset con 16 columnas nuevas, una por cada valor de Fav.genre, con valores 0 o 1 indicando si la persona tiene ese género favorito o no.
+La columna original Fav.genre se elimina.
+Como cada persona tiene un único género favorito, en cada fila solo una de las 16 columnas vale 1.
+Por eso las columnas no son independientes, algo que hay que tener en cuenta en la regresión.
 
 ```{r}
 musicmh = nominal_cols_encoder(musicmh)
 ```
-
 
 Podemos comprobar que la codificación se ha realizado correctamente con las siguientes líneas de código:
 
@@ -282,7 +314,9 @@ Como comentamos anteriormente, la variable BPM tiene valores atípicos que debem
 summary(musicmh$BPM)
 ```
 
-Podemos observar que el valor mínimo es 0, lo cual es una ausencia total de ritmo, y el valor máximo es 1,00e+09, lo cual es un valor imposible para un tempo musical. Además, se observa que la media se ve distorsionada por estos valores extremos, ya que es de 1,59 · 10⁶. Por otro lado, la mediana es 120, lo cual es un valor normal conociendo el dominio.
+Podemos observar que el valor mínimo es 0, lo cual es una ausencia total de ritmo, y el valor máximo es 1,00e+09, lo cual es un valor imposible para un tempo musical.
+Además, se observa que la media se ve distorsionada por estos valores extremos, ya que es de 1,59 · 10⁶.
+Por otro lado, la mediana es 120, lo cual es un valor normal conociendo el dominio.
 
 Para visualizar todo esto, creamos un boxplot de la variable BPM:
 
@@ -299,14 +333,14 @@ Hemos consultado las siguientes webs de metrónomos en línea y una web del BPM 
 -   <https://www.imusic-school.com/es/herramientas/metronomo-en-linea/>
 -   <https://es.wikipedia.org/wiki/Pulsaciones_por_minuto>
 
-Tomamos 20 y 240 BPM como límites amplios que cubren los tempos habituales, y consideramos anómalos los valores por debajo de 20 o por encima de 240. Para eliminar estos valores, hemos creado la función remove_outlier_bpm_values.
+Tomamos 20 y 240 BPM como límites amplios que cubren los tempos habituales, y consideramos anómalos los valores por debajo de 20 o por encima de 240.
+Para eliminar estos valores, hemos creado la función remove_outlier_bpm_values.
 
 ```{r}
 musicmh = remove_outlier_bpm_values(musicmh)
 ```
 
 Realizamos otra visualización para comprobar que los outliers se han eliminado correctamente:
-
 
 ```{r}
 p1 = ggplot(data=musicmh,aes(x=1,y=BPM))+geom_boxplot()
@@ -319,16 +353,18 @@ Podemos ver que los valores más extremos se han eliminado correctamente, aunque
 ### Tratamiento de valores ausentes
 
 Como vimos, hay variables con valores ausentes que debemos tratar.
-Como vimos, hay variables con valores ausentes que debemos tratar.
 
-Lo primero que vamos a hacer para tratar estos valores es observar si hay ejemplos con un alto número de valores ausentes. Con la función return_sorted_na_per_row_if_present calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
+Lo primero que vamos a hacer para tratar estos valores es observar si hay ejemplos con un alto número de valores ausentes.
+Con la función return_sorted_na_per_row_if_present calculamos el número de NA de cada ejemplo y mostramos los que tienen un mayor número de NAs:
 
 ```{r}
 sorted_nas = return_sorted_na_per_row_if_present(musicmh)
 head(sorted_nas)
 ```
 
-Podemos observar que el ejemplo con mayor número de NAs tiene 6. Esto corresponde a 6 de las 30 variables que quedan tras la limpieza (un 20 %). Consideramos que hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla usando la función anti_join() de dplyr:
+Podemos observar que el ejemplo con mayor número de NAs tiene 6.
+Esto corresponde a 6 de las 30 variables que quedan tras la limpieza (un 20 %).
+Consideramos que hacer una imputación de tantos atributos sería generar una muestra muy artificial, así que hemos decidido eliminarla usando la función anti_join() de dplyr:
 
 ```{r}
 musicmh = anti_join(musicmh, sorted_nas[1,])
@@ -338,20 +374,24 @@ dim(musicmh)
 Ahora, debemos tratar los valores ausentes de las variables restantes.
 Para ello, hemos creado la función impute_all_na.
 
-La variable Music.effects tiene 8 valores ausentes, pero al tratarse de la variable a predecir en algunas de nuestras preguntas, hemos decidido no imputarla y eliminar los ejemplos con valores ausentes en esta variable cuando la usemos como variable a predecir. Imputarla supondría inventar la respuesta que queremos predecir, lo que sesgaría la clasificación; además, son muy pocos ejemplos (aproximadamente un 1 % de los ejemplos).
+La variable Music.effects tiene 8 valores ausentes, pero al tratarse de la variable a predecir en algunas de nuestras preguntas, hemos decidido no imputarla y eliminar los ejemplos con valores ausentes en esta variable cuando la usemos como variable a predecir.
+Imputarla supondría inventar la respuesta que queremos predecir, lo que sesgaría la clasificación; además, son muy pocos ejemplos (aproximadamente un 1 % de los ejemplos).
 
-La mayoría del resto de variables con NAs tienen muy pocos (entre 1 y 4). La excepción es la variable BPM, que tiene 107 valores ausentes. Esto es razonable ya que la descripción del dataset indica que era una pregunta opcional.
+La mayoría del resto de variables con NAs tienen muy pocos (entre 1 y 4).
+La excepción es la variable BPM, que tiene 107 valores ausentes.
+Esto es razonable ya que la descripción del dataset indica que era una pregunta opcional.
 
 Para imputar hemos decidido usar bagImpute del paquete caret.
-Para cada variable con NAs, el método entrena un modelo de árboles agregados
+Para cada variable con NAs, el método entrena un modelo de árboles agregados con el resto de variables de hábitos y predice el valor ausente.
 
-[TODO: queda por ver como imputar los NAs pq bagImpute hace que haya dependencia con las variables predictoras]
+Las variables objetivo (los cuatro trastornos y `Music.effects`) no se usan como predictoras en la imputación.
+´ Así, no introducimos una relación de dependencia artificial entre los valores imputados y los que queremos predecir.
 
 ```{r}
 musicmh = impute_all_na(musicmh)
 ```
 
-Podemos comprobar que solo quedan los valores ausentes de la variable Music.effects, en el dataset con la siguiente línea de código:
+Podemos comprobar que solo quedan los 7 valores ausentes de la variable Music.effects, en el dataset con la siguiente línea de código:
 
 ```{r}
 sum(is.na(musicmh))
@@ -360,6 +400,11 @@ sum(is.na(musicmh))
 ## Exploración
 
 Antes de empezar a entrenar nuestros modelos, vamos a explorar un poco nuestras variables y sus relaciones.
+Queremos comprobar principalmente tres cosas:
+
+-   La distribución de los niveles de salud mental y del efecto percibido de la música.
+-   Las relaciones entre predictores.
+-   Los valores extremos de las horas.
 
 ### Distribución de los niveles de salud mental
 
@@ -371,16 +416,15 @@ musicmh |>
   count(Trastorno, Nivel) |>
   ggplot(aes(x = Nivel, y = n)) +
   geom_col(fill = "steelblue") +
-  facet_wrap(~Trastorno, scales = "free_y") +
-  scale_x_continuous(breaks = 0:10) +
-  labs(x = "Nivel (0-10)", y = "Número de personas", title = "Distribución de los niveles de cada trastorno")
+  facet_wrap(~Trastorno) +
+  labs(x = "Nivel (0-10)", y = "Número de personas")
 ```
 
 Los cuatro niveles se distribuyen de forma distinta.
 El TOC (OCD) concentra la mayoría de respuestas en el valor 0 (alrededor de 250 personas).
 El insomnio tiene una distribución similar, con un pico de alrededor de 150 personas en el 0.
 En cambio, la ansiedad se concentra en valores altos, siendo el 7 el más frecuente (casi 125 personas).
-Por otro lado, la depresión tiene una distribución más uniforme.
+Por otro lado, la depresión tiene una distribución donde los valores se encuentran más repartidos.
 Además, hay algunos valores decimales con uno o dos casos, que deberemos tratar.
 
 ### Distribución del efecto percibido de la música
@@ -392,10 +436,10 @@ musicmh |>
   mutate(Clase = factor(Music.effects, levels = 0:2, labels = c("Worsen", "No effect", "Improve"))) |>
   ggplot(aes(x = Clase, y = n)) +
   geom_col(fill = "steelblue") +
-  labs(x = "Efecto percibido", y = "Número de personas", title = "Distribución de Music.effects")
+  labs(x = "Efecto percibido", y = "Número de personas")
 ```
 
-Podemos ver la distribución de los valores de la variable Music.effects:
+Recuentos de la variable Music.effects, sin sus valores ausentes:
 
 -   "Improve" tiene alrededor de 550 respuestas.
 
@@ -403,11 +447,13 @@ Podemos ver la distribución de los valores de la variable Music.effects:
 
 -   "Worsen" solo 17.
 
-Lo que tendremos que tener en cuenta cuando la usemos como variable a predecir.
+Esto hay que tenerlo en cuenta al usar la variable como objetivo.
 
 ### Correlaciones entre variables
 
-Vamos a observar la correlación entre nuestras variables:
+Vamos a observar la correlación entre nuestras variables. 
+
+Antes de visualizarlo, debemos tener en cuenta que las 16 variables dummies de `Fav.genre` se correlacionan negativamente entre sí por construcción, ya que cada persona tiene un único género favorito.
 
 ```{r fig.height = 9, fig.width = 9}
 cor_mat = cor(musicmh, use = "complete.obs")
@@ -417,20 +463,20 @@ corrplot(cor_mat,
          type = "upper",
          tl.cex = 0.5)
 ```
-Podemos observar que no observamos correlaciones muy altas entre las variables.
-La pareja de variables que está más correlacionada es la frecuencia de escucha de Hip Hop y Rap, pero sigue teniendo un valor bajo.
+
+La pareja más correlacionada es la frecuencia de escucha de Hip hop y Rap, con un coeficiente cercano a 0,8.\
+El resto de pares de frecuencias tienen correlaciones moderadas, por debajo de 0,55.
 
 ### Horas de escucha
 
 ```{r}
 ggplot(data = musicmh, aes(x = 1, y = Hours.per.day)) +
   geom_boxplot() +
-  labs(y = "Horas al día", x = NULL, title = "Horas de escucha al día")
+  labs(y = "Horas al día", x = NULL)
 ```
 
-Podemos observar que contamos con algunos valores atípicos, ya que hay personas que escuchan música durante 24 horas al día.
-Pero todos están entre los límites de 0 y 24, que son los valores posibles para esta variable, así que no los eliminaremos.
-
+Hay algunos valores atípicos: 3 personas indican 24 horas diarias y 6 indican 0 horas.
+Aunque sean extremos, son valores posibles dentro de un día, por lo que no hay un límite de dominio que justifique descartarlos.
 
 ## Visualización - Pie Chart
 
@@ -680,7 +726,8 @@ corrplot(cor_freq, method = "color", addCoef.col = "black", number.cex = 0.7,
 
 #Todas las correlaciones son débiles (ninguna pasa de 0,2 en valor absoluto). Las más altas son la depresión con Metal (0,19), Rock (0,18) y Rap (0,14), y el insomnio con Metal (0,16). Escuchar con frecuencia un género concreto, por sí solo, explica muy poco del nivel de cada trastorno. Esto hay que tenerlo en cuenta para la regresión.-->
 ````
-````
+
+\`\`\`\`
 
 Eliminación de filas con valor NA en la variable a predecir en clasificación.
 
@@ -896,7 +943,9 @@ Por eso, unos pocos aciertos o fallos en esa clase cambian bastante las métrica
 El up-sampling del conjunto de entrenamiento obliga a los modelos a prestar atención a la clase minoritaria.
 Sin él, la mayoría tendería a predecir siempre "Improve", como hace ZeroR.
 
-Por último, estos resultados están condicionados por las limitaciones de los datos que comentamos al principio. La muestra es joven y procede sobre todo de redes sociales, y tanto el efecto percibido de la música como los niveles de los trastornos son autoinformados. Además, la mayoría de los encuestados percibe que la música les ayuda, así que la clase "Not.improve" tiene pocos ejemplos para aprender de ella.
+Por último, estos resultados están condicionados por las limitaciones de los datos que comentamos al principio.
+La muestra es joven y procede sobre todo de redes sociales, y tanto el efecto percibido de la música como los niveles de los trastornos son autoinformados.
+Además, la mayoría de los encuestados percibe que la música les ayuda, así que la clase "Not.improve" tiene pocos ejemplos para aprender de ella.
 
 ### Estudio comparativo entre regresión y clasificación
 
@@ -904,9 +953,9 @@ A continuación se realizará un estudio comparativo entre dos conjuntos modelos
 
 Se compararán así dos técnicas:
 
-- **Clasificación mediante kNN** categorizando previamente las métricas (al ser éstas números enteros entre 0 y 10, se interpretará cada valor como una clase).
+-   **Clasificación mediante kNN** categorizando previamente las métricas (al ser éstas números enteros entre 0 y 10, se interpretará cada valor como una clase).
 
-- **Regresión lineal multivariable** trabajando directamente sobre los valores de las métricas.
+-   **Regresión lineal multivariable** trabajando directamente sobre los valores de las métricas.
 
 ```{r}
 source("scripts/regression.R")
@@ -921,19 +970,20 @@ musicmh_regr <- musicmh |> remove_na_target_rows_classification()
 musicmh_regr |> regression_count_levels()
 ```
 
-Como podemos observar, los distintos valores de cada métrica exhiben proporciones dispares. Además, dada la cantidad de posibles valores, la cantidad de muestras para cada uno de ellos es relativamente reducida.
+Como podemos observar, los distintos valores de cada métrica exhiben proporciones dispares.
+Además, dada la cantidad de posibles valores, la cantidad de muestras para cada uno de ellos es relativamente reducida.
 
 De esta manera, emplearemos K-Folds para el entrenamiento y evaluación de los distintos modelos, puesto que, pese a que el número de muestras de cada valor es suficiente para no requerir el uso de Leave-One-Out Cross-Validation (LOOCV), tampoco es lo suficientemente elevado para dividir el conjunto de datos entre entrenamiento y evaluación.
 
 También comprobamos que cada métrica presenta al menos un valor en un nivel fraccional:
 
-- **Ansiedad**: 1 registro en 7.5
+-   **Ansiedad**: 1 registro en 7.5
 
-- **Depresión**: 2 registros en 3.5
+-   **Depresión**: 2 registros en 3.5
 
-- **Insomnio**: 1 registro en 3.5
+-   **Insomnio**: 1 registro en 3.5
 
-- **TOC**: 1 registro en 5.5 y 1 registro en 8.5
+-   **TOC**: 1 registro en 5.5 y 1 registro en 8.5
 
 Por ende, al no tratarse de cantidades significativas, se agruparán con las del siguiente nivel entero mediante un redondeo.
 
@@ -988,7 +1038,8 @@ lms <- musicmh_regr |> regression_train_models(k)
 
 #### Construcción de modelos de clasificación (kNN)
 
-A continuación, realizaremos un proceso similar para crear un modelo de clasificación (empleando la técnica kNN) para cada métrica de salud mental. De nuevo, se empleará K-Folds para el entrenamiento.
+A continuación, realizaremos un proceso similar para crear un modelo de clasificación (empleando la técnica kNN) para cada métrica de salud mental.
+De nuevo, se empleará K-Folds para el entrenamiento.
 
 ```{r}
 k = 10
@@ -1004,9 +1055,12 @@ knss <- regression_train_knn(
 
 ### Aprendizaje no supervisado
 
-El aprendizaje no supervisado agrupa las observaciones según la similitud de sus características, sin utilizar la variable objetivo `Music.effects` para construir los grupos. Nuestra finalidad es comprobar si aparecen agrupaciones naturales asociadas, a priori, a la mejora o no mejora percibida de la salud mental.
+El aprendizaje no supervisado agrupa las observaciones según la similitud de sus características, sin utilizar la variable objetivo `Music.effects` para construir los grupos.
+Nuestra finalidad es comprobar si aparecen agrupaciones naturales asociadas, a priori, a la mejora o no mejora percibida de la salud mental.
 
-Para este estudio hemos utilizado el subconjunto limpio obtenido al eliminar las filas sin efecto musical conocido. Como la K-means calcula distancias, hemos estandarizado las variables numéricas y las variables categóricas o ordinales ya codificadas para que ninguna escala domine artificialmente la agrupación. Los outliers numéricos relevantes ya fueron tratados en el preprocesamiento.
+Para este estudio hemos utilizado el subconjunto limpio obtenido al eliminar las filas sin efecto musical conocido.
+Como la K-means calcula distancias, hemos estandarizado las variables numéricas y las variables categóricas o ordinales ya codificadas para que ninguna escala domine artificialmente la agrupación.
+Los outliers numéricos relevantes ya fueron tratados en el preprocesamiento.
 
 ```{r}
 musicmh_nosup = remove_na_target_rows_classification(musicmh)
@@ -1014,9 +1068,12 @@ musicmh_nosup = remove_na_target_rows_classification(musicmh)
 
 #### K-Means
 
-K-Means es un algoritmo de aprendizaje no supervisado que fija un número `k` de centros y asigna cada observación al centro más cercano según una medida de distancia. Después recalcula iterativamente los centros hasta que las asignaciones convergen.
+K-Means es un algoritmo de aprendizaje no supervisado que fija un número `k` de centros y asigna cada observación al centro más cercano según una medida de distancia.
+Después recalcula iterativamente los centros hasta que las asignaciones convergen.
 
-Como entradas recibe el conjunto de datos, el número de clusters `k` y el criterio de convergencia. Hemos seleccionado `k = 2` para explorar dos grupos: mejora y no mejora percibida. Se han usado 20 inicializaciones distintas (`nstart = 20`) y se ha conservado la mejor solución, haciendo el resultado menos dependiente de la elección inicial de los centros.
+Como entradas recibe el conjunto de datos, el número de clusters `k` y el criterio de convergencia.
+Hemos seleccionado `k = 2` para explorar dos grupos: mejora y no mejora percibida.
+Se han usado 20 inicializaciones distintas (`nstart = 20`) y se ha conservado la mejor solución, haciendo el resultado menos dependiente de la elección inicial de los centros.
 
 ```{r}
 
@@ -1027,9 +1084,11 @@ Este análisis permite comparar los grupos obtenidos con la variable `Music.effe
 
 #### Clustering jerárquico
 
-El clustering jerárquico construye una estructura de agrupación representada mediante un dendograma, en la que las observaciones más similares se unen antes que las más distintas. Utilizamos la distancia euclídea sobre los datos procesados y el método de enlace `ward.D2`, que tiende a formar grupos compactos minimizando la varianza interna.
+El clustering jerárquico construye una estructura de agrupación representada mediante un dendograma, en la que las observaciones más similares se unen antes que las más distintas.
+Utilizamos la distancia euclídea sobre los datos procesados y el método de enlace `ward.D2`, que tiende a formar grupos compactos minimizando la varianza interna.
 
-Como en K-Means, hemos cortado la jerarquía a dos grupos (`k = 2`) para compararla con las dos categorías definidas en el estudio: mejoría y no mejoría percibida. El dendograma permite examinar visualmente a qué altura se produjo la separación principal y si los grupos aparecen claramente diferenciados.
+Como en K-Means, hemos cortado la jerarquía a dos grupos (`k = 2`) para compararla con las dos categorías definidas en el estudio: mejoría y no mejoría percibida.
+El dendograma permite examinar visualmente a qué altura se produjo la separación principal y si los grupos aparecen claramente diferenciados.
 
 ```{r}
 distances = dist(musicmh_nosup)
@@ -1042,11 +1101,14 @@ plot(hmusic,
 rect.hclust(hmusic, k = 2, border = c("#5080F0", "#00954C"))
 ```
 
-El corte a dos grupos es una decisión de nuestro análisis y no implica que existan necesariamente solo dos perfiles naturales en los datos. Por ello, comparamos también visualmente las asignaciones de ambos algoritmos.
+El corte a dos grupos es una decisión de nuestro análisis y no implica que existan necesariamente solo dos perfiles naturales en los datos.
+Por ello, comparamos también visualmente las asignaciones de ambos algoritmos.
 
 #### Representación con t-SNE
 
-El dataset procesado tiene 45 variables, por lo que resulta difícil representar directamente sus relaciones. Hemos aplicado t-SNE para transformar los datos a dos y tres dimensiones conservando principalmente las relaciones entre vecinos cercanos. Estas visualizaciones sirven para explorar la estructura local del conjunto y comparar los clusters, aunque las distancias globales y los ejes de t-SNE no tienen una interpretación directa.
+El dataset procesado tiene 45 variables, por lo que resulta difícil representar directamente sus relaciones.
+Hemos aplicado t-SNE para transformar los datos a dos y tres dimensiones conservando principalmente las relaciones entre vecinos cercanos.
+Estas visualizaciones sirven para explorar la estructura local del conjunto y comparar los clusters, aunque las distancias globales y los ejes de t-SNE no tienen una interpretación directa.
 
 Se excluye `Music.effects` de la transformación porque se utiliza solo como referencia externa para interpretar los resultados; así, tanto K-Means como el clustering jerárquico siguen siendo no supervisados.
 
@@ -1190,13 +1252,16 @@ Ambos algoritmos enfrentados 2D
 subplot(kmeans2d, jerarquico2d)
 ```
 
-Las gráficas permiten comprobar si ambos métodos forman regiones similares. Las etiquetas de color representan los clusters calculados, mientras que las variables externas se muestran únicamente para interpretar si los grupos se corresponden con la percepción del efecto musical.
+Las gráficas permiten comprobar si ambos métodos forman regiones similares.
+Las etiquetas de color representan los clusters calculados, mientras que las variables externas se muestran únicamente para interpretar si los grupos se corresponden con la percepción del efecto musical.
 
 #### Redución de dimensionalidad mediante PCA
 
-Aplicamos el análisis de componentes principales para reducir el número de variables manteniendo aproximadamente entre el 80 % y el 85 % de la variabilidad original. PCA crea combinaciones lineales no correlacionadas de las variables originales y permite conservar la mayor parte de la información con menos componentes.
+Aplicamos el análisis de componentes principales para reducir el número de variables manteniendo aproximadamente entre el 80 % y el 85 % de la variabilidad original.
+PCA crea combinaciones lineales no correlacionadas de las variables originales y permite conservar la mayor parte de la información con menos componentes.
 
-En este caso, excluimos `Music.effects` de PCA y volvemos a incluirla solo al interpretar los grupos obtenidos. Antes de calcular los componentes, escalamos y centramos las variables predictoras para evitar que las diferencias de unidades influyan de forma desproporcionada.
+En este caso, excluimos `Music.effects` de PCA y volvemos a incluirla solo al interpretar los grupos obtenidos.
+Antes de calcular los componentes, escalamos y centramos las variables predictoras para evitar que las diferencias de unidades influyan de forma desproporcionada.
 
 ```{r}
 features_pca = select(musicmh_nosup, -"Music.effects")
@@ -1227,7 +1292,8 @@ cat("Número de componentes para alcanzar al menos el 80%:", num_pca, "\n")
 cat("Varianza acumulada:", round(pca_cum_var[num_pca] * 100, 2), "%\n")
 ```
 
-De este modo, reducimos la dimensionalidad conservando una proporción fija de la variabilidad. A continuación se repiten K-Means y el clustering jerárquico utilizando exclusivamente las componentes principales seleccionadas.
+De este modo, reducimos la dimensionalidad conservando una proporción fija de la variabilidad.
+A continuación se repiten K-Means y el clustering jerárquico utilizando exclusivamente las componentes principales seleccionadas.
 
 ##### K-Means tras PCA
 
@@ -1252,7 +1318,8 @@ ggplot(pca_kmeans_df, aes(x = X, y = Y, color = cluster)) +
   theme_minimal()
 ```
 
-K-Means calcula ahora los centros y las distancias sobre las componentes principales en lugar de hacerlo sobre las 45 variables originales. Esta representación sirve para observar si la reducción preserva una estructura compatible con los grupos obtenidos.
+K-Means calcula ahora los centros y las distancias sobre las componentes principales en lugar de hacerlo sobre las 45 variables originales.
+Esta representación sirve para observar si la reducción preserva una estructura compatible con los grupos obtenidos.
 
 ##### Clustering jerárquico tras PCA
 
@@ -1277,4 +1344,5 @@ ggplot(pca_hcl_df, aes(x = X, y = Y, color = cluster)) +
   theme_minimal()
 ```
 
-La comparación de estos resultados con los obtenidos antes de PCA permite evaluar si la reducción de dimensionalidad simplifica los datos sin eliminar los patrones principales. Debemos interpretarla con cautela, ya que PCA conserva información global y t-SNE representa relaciones locales.
+La comparación de estos resultados con los obtenidos antes de PCA permite evaluar si la reducción de dimensionalidad simplifica los datos sin eliminar los patrones principales.
+Debemos interpretarla con cautela, ya que PCA conserva información global y t-SNE representa relaciones locales.

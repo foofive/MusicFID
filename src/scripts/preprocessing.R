@@ -87,16 +87,17 @@ impute_all_na = function(data,cols = NULL, method = "bagImpute", impute_targets 
   
   col_names = if (is.null(cols)) colnames(data) else cols
   
-  targets = tail(colnames(data), n = 5)
+  targets = c("Anxiety", "Depression", "Insomnia", "OCD", "Music.effects")
+  stopifnot(all(targets %in% colnames(data)))
 
   targets_with_na = targets[colSums(is.na(data[, targets, drop = FALSE])) > 0]
   if (!impute_targets) {
     col_names = setdiff(col_names, targets_with_na)
   }
   
-  # Objetivos SIN NA: se usan como predictoras porque no van a ser imputadas
-  targets_complete = setdiff(targets, targets_with_na)
-  model_cols = union(col_names, targets_complete)
+  # Los objetivos no son predictoras del modelo de imputación: así los valores
+  # imputados no dependen de las variables que queremos predecir
+  model_cols = setdiff(col_names, targets)
   
   # Columnas a imputar
   imp_cols = names(which(colSums(is.na(data[, col_names, drop = FALSE])) > 0))
